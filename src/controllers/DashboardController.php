@@ -46,11 +46,17 @@ class DashboardController {
         // Handle Add Schedule
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_schedule') {
             try {
+                // Handle multiple pengawas
+                $pengawas = isset($_POST['pengawas']) ? $_POST['pengawas'] : [];
+                
                 $this->scheduleModel->create([
                     'date' => $_POST['date'],
+                    'prodi' => $_POST['prodi'],
                     'session' => $_POST['session'],
+                    'mata_kuliah' => $_POST['mata_kuliah'],
                     'start' => $_POST['start'],
-                    'end' => $_POST['end']
+                    'end' => $_POST['end'],
+                    'pengawas' => $pengawas
                 ]);
                 $success_msg = "Jadwal berhasil ditambahkan.";
             } catch (\Exception $e) {
@@ -79,6 +85,10 @@ class DashboardController {
         }
 
         $users = $this->userModel->getAll();
+        
+        // Filter users to find potential supervisors (Pengawas)
+        $supervisors = array_filter($users, fn($u) => strpos($u['jabatan'], 'Pengawas') !== false);
+        
         $attendance = $this->attendanceModel->getRecent();
         $schedules = $this->scheduleModel->getAll();
 

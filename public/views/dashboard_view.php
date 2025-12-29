@@ -39,6 +39,27 @@
                                     <label class="small">Sesi</label>
                                     <input type="text" name="session" class="form-control form-control-sm" placeholder="Contoh: Sesi 1" required>
                                 </div>
+                                <div class="col-12">
+                                    <label class="small">Program Studi</label>
+                                    <select name="prodi" class="form-select form-select-sm" required>
+                                        <option value="">-- Pilih Prodi --</option>
+                                        <option value="PAI">PAI</option>
+                                        <option value="PIAUD">PIAUD</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="small">Mata Kuliah</label>
+                                    <input type="text" name="mata_kuliah" class="form-control form-control-sm" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="small">Pengawas (Bisa pilih data banyak)</label>
+                                    <select name="pengawas[]" class="form-select form-select-sm" multiple style="height: 100px;">
+                                        <?php foreach ($supervisors as $spv): ?>
+                                            <option value="<?= htmlspecialchars($spv['nama']) ?>"><?= htmlspecialchars($spv['nama']) ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                    <small class="text-muted" style="font-size: 0.75rem;">*Tahan CTRL untuk pilih lebih dari satu</small>
+                                </div>
                                 <div class="col-6">
                                     <label class="small">Mulai</label>
                                     <input type="time" name="start" class="form-control form-control-sm" required>
@@ -56,8 +77,10 @@
                             <?php foreach ($schedules as $s): ?>
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <div>
-                                        <strong><?= date('d M', strtotime($s['date'])) ?></strong> - <?= htmlspecialchars($s['session_name']) ?><br>
-                                        <span class="text-muted"><?= date('H:i', strtotime($s['start_time'])) ?> - <?= date('H:i', strtotime($s['end_time'])) ?></span>
+                                        <strong><?= date('d M', strtotime($s['date'])) ?></strong> - <span class="badge bg-info text-dark"><?= htmlspecialchars($s['prodi'] ?? '-') ?></span> <?= htmlspecialchars($s['session_name']) ?><br>
+                                        <span class="text-muted"><?= date('H:i', strtotime($s['start_time'])) ?> - <?= date('H:i', strtotime($s['end_time'])) ?></span><br>
+                                        <em>MK: <?= htmlspecialchars($s['mata_kuliah'] ?? '-') ?></em><br>
+                                        <small>Pengawas: <?= htmlspecialchars($s['pengawas'] ?? '-') ?></small>
                                     </div>
                                     <a href="?delete_schedule=<?= $s['id'] ?>" class="text-danger" onclick="return confirm('Hapus jadwal?')">&times;</a>
                                 </li>

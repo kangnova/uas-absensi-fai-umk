@@ -16,12 +16,19 @@ class Schedule {
     }
 
     public function create($data) {
-        $stmt = $this->pdo->prepare("INSERT INTO exam_schedules (date, session_name, start_time, end_time) VALUES (:date, :session, :start, :end)");
+        $stmt = $this->pdo->prepare("INSERT INTO exam_schedules (date, prodi, session_name, mata_kuliah, start_time, end_time, pengawas) VALUES (:date, :prodi, :session, :mk, :start, :end, :pengawas)");
+        
+        // Pengawas is array, implode it
+        $pengawas = is_array($data['pengawas']) ? implode(', ', $data['pengawas']) : $data['pengawas'];
+
         return $stmt->execute([
             'date' => $data['date'],
+            'prodi' => $data['prodi'],
             'session' => $data['session'],
+            'mk' => $data['mata_kuliah'],
             'start' => $data['start'],
-            'end' => $data['end']
+            'end' => $data['end'],
+            'pengawas' => $pengawas
         ]);
     }
 
