@@ -1,0 +1,49 @@
+<?php
+namespace App\Models;
+
+use PDO;
+
+class User {
+    private $pdo;
+
+    public function __construct(PDO $pdo) {
+        $this->pdo = $pdo;
+    }
+
+    public function getAll() {
+        $stmt = $this->pdo->query("SELECT * FROM users ORDER BY created_at DESC");
+        return $stmt->fetchAll();
+    }
+
+    public function create($data) {
+        $stmt = $this->pdo->prepare("INSERT INTO users (nama, nip_nidn, jabatan, qr_token) VALUES (:nama, :nip, :jabatan, :token)");
+        return $stmt->execute([
+            'nama' => $data['nama'],
+            'nip' => $data['nip'],
+            'jabatan' => $data['jabatan'],
+            'token' => $data['token']
+        ]);
+    }
+
+    public function delete($id) {
+        $this->pdo->prepare("DELETE FROM attendance WHERE user_id = ?")->execute([$id]);
+        return $this->pdo->prepare("DELETE FROM users WHERE id = ?")->execute([$id]);
+    }
+
+    public function getById($id) {
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE id = :id");
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetch();
+    }
+
+    public function findByToken($token) {
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE qr_token = :token");
+        $stmt->execute(['token' => $token]);
+        return $stmt->fetch();
+    }
+
+    public function updateToken($id, $token) {
+        $stmt = $this->pdo->prepare("UPDATE users SET qr_token = :token WHERE id = :id");
+        return $stmt->execute(['token' => $token, 'id' => $id]);
+    }
+}
