@@ -8,7 +8,7 @@ use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
 use Endroid\QrCode\Label\LabelAlignment;
-use Endroid\QrCode\Label\Font\NotoSans;
+use Endroid\QrCode\Label\Font\OpenSans;
 use Endroid\QrCode\RoundBlockSizeMode;
 use Endroid\QrCode\Writer\PngWriter;
 
@@ -31,20 +31,21 @@ if (empty($user['qr_token'])) {
 }
 
 // Generate QR Code
-$result = Builder::create()
-    ->writer(new PngWriter())
-    ->writerOptions([])
-    ->data($user['qr_token'])
-    ->encoding(new Encoding('UTF-8'))
-    ->errorCorrectionLevel(ErrorCorrectionLevel::High)
-    ->size(300)
-    ->margin(10)
-    ->roundBlockSizeMode(RoundBlockSizeMode::Margin)
-    ->labelText($user['nama'])
-    ->labelFont(new NotoSans(14))
-    ->labelAlignment(LabelAlignment::Center)
-    ->validateResult(false)
-    ->build();
+$builder = new Builder(
+    writer: new PngWriter(),
+    writerOptions: [],
+    data: $user['qr_token'],
+    encoding: new Encoding('UTF-8'),
+    errorCorrectionLevel: ErrorCorrectionLevel::High,
+    size: 300,
+    margin: 10,
+    roundBlockSizeMode: RoundBlockSizeMode::Margin,
+    labelText: $user['nama'],
+    labelFont: new OpenSans(14),
+    labelAlignment: LabelAlignment::Center,
+    validateResult: false
+);
+$result = $builder->build();
 
 // Save to file
 $uploadDir = __DIR__ . '/../uploads/qrcodes/';
