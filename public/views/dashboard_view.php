@@ -256,9 +256,9 @@
                                     <tbody>
                                         <?php foreach ($users as $u): ?>
                                         <tr>
-                                            <td><?= htmlspecialchars($u['nama']) ?><br><small class="text-muted"><?= htmlspecialchars($u['nip_nidn']) ?></small></td>
-                                            <td><span class="badge bg-secondary"><?= htmlspecialchars($u['prodi']) ?></span></td>
-                                            <td><?= htmlspecialchars($u['jabatan']) ?></td>
+                                            <td><?= htmlspecialchars($u['nama'] ?? '') ?><br><small class="text-muted"><?= htmlspecialchars($u['nip_nidn'] ?? '') ?></small></td>
+                                            <td><span class="badge bg-secondary"><?= htmlspecialchars($u['prodi'] ?? '-') ?></span></td>
+                                            <td><?= htmlspecialchars($u['jabatan'] ?? '') ?></td>
                                             <td class="text-center">
                                                 <?php if (!empty($u['qr_image'])): ?>
                                                     <img src="../uploads/qrcodes/<?= htmlspecialchars($u['qr_image']) ?>" alt="QR" style="width: 40px; height: 40px;">
