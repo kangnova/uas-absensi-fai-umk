@@ -27,6 +27,11 @@ class Attendance {
         return $stmt->fetchAll();
     }
 
+    public function getAll() {
+        $stmt = $this->pdo->query("SELECT * FROM attendance");
+        return $stmt->fetchAll();
+    }
+
     public function checkToday($userId) {
         $stmt = $this->pdo->prepare("SELECT * FROM attendance WHERE user_id = :uid AND DATE(timestamp_in) = CURDATE()");
         $stmt->execute(['uid' => $userId]);

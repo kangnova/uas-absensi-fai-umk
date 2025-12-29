@@ -118,38 +118,67 @@ class DashboardController {
         $schedules = $this->scheduleModel->getAll();
 
         // STATISTICS CALCULATION
+        $all_attendance = $this->attendanceModel->getAll(); // Fetch ALL for accurate stats
+        
+        // Detailed User Stats & Global Stats
         $stats = [
-            'panitia_total' => 0,
+            'panitia_total_target' => 0, // Sum of all panitia individual targets (e.g. 10 scheds * 5 panitia = 50)
             'panitia_hadir' => 0,
-            'pengawas_total' => 0,
+            'pengawas_total_target' => 0,
             'pengawas_hadir' => 0
         ];
 
-        // 1. Count Totals
-        foreach ($users as $u) {
-            if (strpos($u['jabatan'], 'Panitia') !== false) $stats['panitia_total']++;
-            if (strpos($u['jabatan'], 'Pengawas') !== false) $stats['pengawas_total']++;
-        }
+        // Prepare User Detailed Stats
+        // We will inject these directly into $users array for easier view handling
+        foreach ($users as &$u) {
+            $u['stats'] = [
+                'target' => 0,
+                'hadir' => 0,
+                'absen' => 0
+            ];
 
-        // 2. Count Present (Unique per user per day/session logic? Simplified to check if present in current attendance list which is recent 50. 
-        // ideally we query DB matching today. But for View, let's use what we have if acceptable, OR check attendance properly.)
-        // Refinement: Ideally we want count of UNIQUE people present TODAY.
-        // Let's do a more robust count if possible, but given constraints, I'll iterate the fetched attendance (limit 50 might be too small for stats!). 
-        // Let's use the full attendance logic or current view logic. 
-        // Assuming $attendance contains recent ones, this is imprecise. 
-        // BETTER: Use attendanceModel checks for specific counts if needed. 
-        // For now, I'll stick to the passed $attendance array mapping, but beware of limits. 
-        // Actually, let's just count based on the view logic (Assuming $attendance covers the session).
-        
-        // Let's refine: Use specific IDs found in $attendance
-        $present_ids = array_column($attendance, 'user_id');
-        
-        foreach ($users as $u) {
-            if (in_array($u['id'], $present_ids)) {
-                if (strpos($u['jabatan'], 'Panitia') !== false) $stats['panitia_hadir']++;
-                if (strpos($u['jabatan'], 'Pengawas') !== false) $stats['pengawas_hadir']++;
+            // 1. Calculate Target
+            if (strpos($u['jabatan'], 'Panitia') !== false) {
+                // Panitia target = All schedules
+                $u['stats']['target'] = count($schedules);
+            } elseif (strpos($u['jabatan'], 'Pengawas') !== false) {
+                // Pengawas target = Schedules where they are listed
+                $my_schedules = 0;
+                foreach ($schedules as $sch) {
+                    if (isset($sch['pengawas']) && strpos($sch['pengawas'], $u['nama']) !== false) {
+                        $my_schedules++;
+                    }
+                }
+                $u['stats']['target'] = $my_schedules;
+            }
+
+            // 2. Calculate Hadir (Actual Presence)
+            // Filter attendance for this user
+            $my_attendance = array_filter($all_attendance, fn($a) => $a['user_id'] == $u['id']);
+            $u['stats']['hadir'] = count($my_attendance);
+
+            // 3. Calculate Absen
+            $u['stats']['absen'] = max(0, $u['stats']['target'] - $u['stats']['hadir']);
+
+            // Update Global Stats (Accumulate Actual vs Target)
+             if (strpos($u['jabatan'], 'Panitia') !== false) {
+                $stats['panitia_total_target'] += $u['stats']['target'];
+                $stats['panitia_hadir'] += $u['stats']['hadir'];
+            } 
+            if (strpos($u['jabatan'], 'Pengawas') !== false) {
+                $stats['pengawas_total_target'] += $u['stats']['target'];
+                $stats['pengawas_hadir'] += $u['stats']['hadir'];
             }
         }
+        unset($u); // Break reference
+
+        // Recalculate global strictly based on the sum logic we just did?
+        // The previous global stats logic was "Headcount of People Present vs People Registered".
+        // The new request implies "Total Man-Schedules Present vs Total Man-Schedules Scheduled".
+        // Let's stick to the new comprehensive logic for the cards too, or keep them as "People"?
+        // User asked "statistik pada setiap baris nama", suggesting the cards can stay or update. 
+        // Let's update cards to reflect "Kehadiran (Sesi)" rather than just "Orang". It's more accurate for a UAS context.
+        // So: Panitia Hadir = Sum of all panitia presence counts. Panitia Total = Sum of all panitia targets.
 
         require __DIR__ . '/../../public/views/dashboard_view.php';
     }

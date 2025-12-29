@@ -295,13 +295,13 @@
                             <div class="col-md-6 mb-2">
                                 <div class="card bg-light border-primary">
                                     <div class="card-body p-2 text-center">
-                                        <h6 class="card-title text-primary mb-0">Statistik Panitia</h6>
+                                        <h6 class="card-title text-primary mb-0">Statistik Panitia (Tugas)</h6>
                                         <div class="fs-4 fw-bold">
-                                            <?= $stats['panitia_hadir'] ?> / <?= $stats['panitia_total'] ?>
+                                            <?= $stats['panitia_hadir'] ?> / <?= $stats['panitia_total_target'] ?>
                                         </div>
-                                        <small class="text-muted">Hadir / Total</small>
+                                        <small class="text-muted">Total Kehadiran Sesi / Total Sesi Wajib</small>
                                         <div class="progress mt-1" style="height: 5px;">
-                                            <div class="progress-bar bg-primary" role="progressbar" style="width: <?= ($stats['panitia_total'] > 0 ? ($stats['panitia_hadir']/$stats['panitia_total']*100) : 0) ?>%"></div>
+                                            <div class="progress-bar bg-primary" role="progressbar" style="width: <?= ($stats['panitia_total_target'] > 0 ? ($stats['panitia_hadir']/$stats['panitia_total_target']*100) : 0) ?>%"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -309,13 +309,13 @@
                             <div class="col-md-6 mb-2">
                                 <div class="card bg-light border-success">
                                     <div class="card-body p-2 text-center">
-                                        <h6 class="card-title text-success mb-0">Statistik Pengawas</h6>
+                                        <h6 class="card-title text-success mb-0">Statistik Pengawas (Tugas)</h6>
                                         <div class="fs-4 fw-bold">
-                                            <?= $stats['pengawas_hadir'] ?> / <?= $stats['pengawas_total'] ?>
+                                            <?= $stats['pengawas_hadir'] ?> / <?= $stats['pengawas_total_target'] ?>
                                         </div>
-                                        <small class="text-muted">Hadir / Total</small>
+                                        <small class="text-muted">Total Kehadiran Sesi / Total Tugas Jaga</small>
                                         <div class="progress mt-1" style="height: 5px;">
-                                            <div class="progress-bar bg-success" role="progressbar" style="width: <?= ($stats['pengawas_total'] > 0 ? ($stats['pengawas_hadir']/$stats['pengawas_total']*100) : 0) ?>%"></div>
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: <?= ($stats['pengawas_total_target'] > 0 ? ($stats['pengawas_hadir']/$stats['pengawas_total_target']*100) : 0) ?>%"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -323,7 +323,7 @@
                         </div>
 
                         <div class="card">
-                            <div class="card-header">Data Semua Peserta</div>
+                            <div class="card-header">Data Semua Peserta & Statistik Individu</div>
                             <div class="card-body">
                                 <table class="table table-bordered table-sm table-striped">
                                     <thead>
@@ -331,6 +331,9 @@
                                             <th>Nama</th>
                                             <th>Prodi</th>
                                             <th>Jabatan (Role)</th>
+                                            <th class="table-info text-center">Target (Wajib)</th>
+                                            <th class="table-success text-center">Hadir</th>
+                                            <th class="table-danger text-center">Tidak Hadir</th>
                                             <th>QR Code</th>
                                             <th>Aksi</th>
                                         </tr>
@@ -341,6 +344,9 @@
                                             <td><?= htmlspecialchars($u['nama'] ?? '') ?><br><small class="text-muted"><?= htmlspecialchars($u['nip_nidn'] ?? '') ?></small></td>
                                             <td><span class="badge bg-secondary"><?= htmlspecialchars($u['prodi'] ?? '-') ?></span></td>
                                             <td><?= htmlspecialchars($u['jabatan'] ?? '') ?></td>
+                                            <td class="text-center fw-bold"><?= $u['stats']['target'] ?? 0 ?></td>
+                                            <td class="text-center text-success fw-bold"><?= $u['stats']['hadir'] ?? 0 ?></td>
+                                            <td class="text-center text-danger fw-bold"><?= $u['stats']['absen'] ?? 0 ?></td>
                                             <td class="text-center">
                                                 <?php if (!empty($u['qr_image'])): ?>
                                                     <img src="../uploads/qrcodes/<?= htmlspecialchars($u['qr_image']) ?>" alt="QR" style="width: 40px; height: 40px;">
