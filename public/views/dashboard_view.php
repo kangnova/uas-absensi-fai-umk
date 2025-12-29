@@ -198,8 +198,43 @@
 
                     // Prepare Data
                     $all_panitia = array_filter($users, fn($u) => strpos($u['jabatan'], 'Panitia') !== false);
-                    $pengawas_pai = array_filter($users, fn($u) => strpos($u['jabatan'], 'Pengawas') !== false && $u['prodi'] === 'PAI');
-                    $pengawas_piaud = array_filter($users, fn($u) => strpos($u['jabatan'], 'Pengawas') !== false && $u['prodi'] === 'PIAUD');
+                    
+                    // Filter Pengawas AND Substitutes based on Prodi
+                    // Logic: User is Pengawas of Prodi OR User is a Substitute (Panitia) who took a schedule for that Prodi
+                    // Since substitution_count is generic, we'll try to find if they have a schedule match for the Prodi
+                    $pengawas_pai = array_filter($users, function($u) use ($schedules) {
+                        $is_official = (strpos($u['jabatan'], 'Pengawas') !== false && $u['prodi'] === 'PAI');
+                        $is_substitute = ($u['stats']['substitution_count'] > 0);
+                        
+                        if ($is_official) return true;
+                        
+                        // Check if substitute for PAI
+                        if ($is_substitute) {
+                            foreach ($schedules as $s) {
+                                if ($s['prodi'] === 'PAI' && strpos($s['pengawas'], $u['nama']) !== false) {
+                                    return true;
+                                }
+                            }
+                        }
+                        return false;
+                    });
+
+                    $pengawas_piaud = array_filter($users, function($u) use ($schedules) {
+                        $is_official = (strpos($u['jabatan'], 'Pengawas') !== false && $u['prodi'] === 'PIAUD');
+                        $is_substitute = ($u['stats']['substitution_count'] > 0);
+                        
+                        if ($is_official) return true;
+                        
+                         // Check if substitute for PIAUD
+                        if ($is_substitute) {
+                            foreach ($schedules as $s) {
+                                if ($s['prodi'] === 'PIAUD' && strpos($s['pengawas'], $u['nama']) !== false) {
+                                    return true;
+                                }
+                            }
+                        }
+                        return false;
+                    });
 
                     $sorted_panitia = sortByPresence($all_panitia, $attendance);
                     $sorted_pai = sortByPresence($pengawas_pai, $attendance);
@@ -220,7 +255,12 @@
                             <tbody>
                                 <?php foreach ($sorted_panitia as $u): ?>
                                     <tr class="<?= !empty($u['attendance_info']) ? 'table-success' : '' ?>">
-                                        <td><?= htmlspecialchars($u['nama'] ?? '') ?></td>
+                                        <td>
+                                            <?= htmlspecialchars($u['nama'] ?? '') ?>
+                                            <?php if(($u['stats']['substitution_count'] ?? 0) > 0): ?>
+                                                <span class="badge bg-warning text-dark ms-1">Gantikan Pengawas</span>
+                                            <?php endif; ?>
+                                        </td>
                                         <td>
                                             <?php if (!empty($u['attendance_info'])): ?>
                                                 <span class="badge bg-success">Hadir: <?= date('H:i', strtotime($u['attendance_info']['timestamp_in'])) ?></span>
@@ -249,7 +289,12 @@
                             <tbody>
                                 <?php foreach ($sorted_pai as $u): ?>
                                     <tr class="<?= !empty($u['attendance_info']) ? 'table-success' : '' ?>">
-                                        <td><?= htmlspecialchars($u['nama'] ?? '') ?></td>
+                                        <td>
+                                            <?= htmlspecialchars($u['nama'] ?? '') ?>
+                                            <?php if(($u['stats']['substitution_count'] ?? 0) > 0 && strpos($u['jabatan'], 'Pengawas') === false): ?>
+                                                <span class="badge bg-info text-dark ms-1">(Pengganti)</span>
+                                            <?php endif; ?>
+                                        </td>
                                         <td>
                                             <?php if (!empty($u['attendance_info'])): ?>
                                                 <span class="badge bg-success">Hadir: <?= date('H:i', strtotime($u['attendance_info']['timestamp_in'])) ?></span>
@@ -272,7 +317,12 @@
                             <tbody>
                                 <?php foreach ($sorted_piaud as $u): ?>
                                     <tr class="<?= !empty($u['attendance_info']) ? 'table-success' : '' ?>">
-                                        <td><?= htmlspecialchars($u['nama'] ?? '') ?></td>
+                                        <td>
+                                            <?= htmlspecialchars($u['nama'] ?? '') ?>
+                                            <?php if(($u['stats']['substitution_count'] ?? 0) > 0 && strpos($u['jabatan'], 'Pengawas') === false): ?>
+                                                <span class="badge bg-info text-dark ms-1">(Pengganti)</span>
+                                            <?php endif; ?>
+                                        </td>
                                         <td>
                                             <?php if (!empty($u['attendance_info'])): ?>
                                                 <span class="badge bg-success">Hadir: <?= date('H:i', strtotime($u['attendance_info']['timestamp_in'])) ?></span>
@@ -341,7 +391,13 @@
                                     <tbody>
                                         <?php foreach ($users as $u): ?>
                                         <tr>
-                                            <td><?= htmlspecialchars($u['nama'] ?? '') ?><br><small class="text-muted"><?= htmlspecialchars($u['nip_nidn'] ?? '') ?></small></td>
+                                            <td>
+                                                <?= htmlspecialchars($u['nama'] ?? '') ?>
+                                                <?php if(($u['stats']['substitution_count'] ?? 0) > 0 && strpos($u['jabatan'], 'Pengawas') === false): ?>
+                                                    <br><span class="badge bg-info text-dark small" style="font-size: 0.7em;">Gantikan Pengawas (<?= $u['stats']['substitution_count'] ?>x)</span>
+                                                <?php endif; ?>
+                                                <br><small class="text-muted"><?= htmlspecialchars($u['nip_nidn'] ?? '') ?></small>
+                                            </td>
                                             <td><span class="badge bg-secondary"><?= htmlspecialchars($u['prodi'] ?? '-') ?></span></td>
                                             <td><?= htmlspecialchars($u['jabatan'] ?? '') ?></td>
                                             <td class="text-center fw-bold"><?= $u['stats']['target'] ?? 0 ?></td>

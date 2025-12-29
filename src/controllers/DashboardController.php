@@ -152,6 +152,19 @@ class DashboardController {
                 $u['stats']['target'] = $my_schedules;
             }
 
+            // 1.5 Calculate Substitute Duty (If NOT Pengawas but assigned)
+            $u['stats']['substitution_count'] = 0;
+            if (strpos($u['jabatan'], 'Pengawas') === false) {
+                 foreach ($schedules as $sch) {
+                    if (isset($sch['pengawas']) && strpos($sch['pengawas'], $u['nama']) !== false) {
+                        $u['stats']['substitution_count']++;
+                    }
+                }
+                // If they have substitution duties, add to target? 
+                // User requirement: "tanda untuk panitia tersebut menggantikan".
+                // We keep it separate for badge.
+            }
+
             // 2. Calculate Hadir (Actual Presence)
             // Filter attendance for this user
             $my_attendance = array_filter($all_attendance, fn($a) => $a['user_id'] == $u['id']);
@@ -171,14 +184,6 @@ class DashboardController {
             }
         }
         unset($u); // Break reference
-
-        // Recalculate global strictly based on the sum logic we just did?
-        // The previous global stats logic was "Headcount of People Present vs People Registered".
-        // The new request implies "Total Man-Schedules Present vs Total Man-Schedules Scheduled".
-        // Let's stick to the new comprehensive logic for the cards too, or keep them as "People"?
-        // User asked "statistik pada setiap baris nama", suggesting the cards can stay or update. 
-        // Let's update cards to reflect "Kehadiran (Sesi)" rather than just "Orang". It's more accurate for a UAS context.
-        // So: Panitia Hadir = Sum of all panitia presence counts. Panitia Total = Sum of all panitia targets.
 
         require __DIR__ . '/../../public/views/dashboard_view.php';
     }
