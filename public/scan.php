@@ -72,8 +72,17 @@
                     scanResult.innerText = data.message;
                     
                     // TTS for duplicate
-                    let msg = new SpeechSynthesisUtterance("Maaf, sudah absen");
+                    let msg = new SpeechSynthesisUtterance("sudah scan");
                     msg.lang = 'id-ID';
+                    msg.rate = 0.9;
+                    
+                    // Attempt to pick an Indonesian voice if available
+                    let voices = window.speechSynthesis.getVoices();
+                    let idVoice = voices.find(v => v.lang === 'id-ID' || v.lang === 'id_ID');
+                    if (idVoice) {
+                        msg.voice = idVoice;
+                    }
+
                     window.speechSynthesis.speak(msg);
                 }
                 
