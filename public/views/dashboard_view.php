@@ -73,7 +73,9 @@
                                     <label class="small">Pengawas (Ganti jika berhalangan)</label>
                                     <select name="pengawas[]" class="form-select form-select-sm" multiple style="height: 100px;">
                                         <?php foreach ($supervisors as $spv): ?>
-                                            <option value="<?= htmlspecialchars($spv['nama']) ?>" <?= in_array($spv['nama'], $e_pengawas) ? 'selected' : '' ?>><?= htmlspecialchars($spv['nama']) ?></option>
+                                            <option value="<?= htmlspecialchars($spv['nama']) ?>" <?= in_array($spv['nama'], $e_pengawas) ? 'selected' : '' ?>>
+                                                <?= htmlspecialchars($spv['nama']) ?> (<?= htmlspecialchars($spv['jabatan']) ?>)
+                                            </option>
                                         <?php endforeach; ?>
                                     </select>
                                     <small class="text-muted" style="font-size: 0.75rem;">*Tahan CTRL untuk pilih lebih dari satu</small>

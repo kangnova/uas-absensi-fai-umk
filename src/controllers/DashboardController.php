@@ -111,8 +111,8 @@ class DashboardController {
 
         $users = $this->userModel->getAll();
         
-        // Filter users to find potential supervisors (Pengawas)
-        $supervisors = array_filter($users, fn($u) => strpos($u['jabatan'], 'Pengawas') !== false);
+        // Filter users to find potential supervisors (Pengawas) OR Substitutes (Panitia)
+        $supervisors = array_filter($users, fn($u) => strpos($u['jabatan'], 'Pengawas') !== false || strpos($u['jabatan'], 'Panitia') !== false);
         
         $attendance = $this->attendanceModel->getRecent();
         $schedules = $this->scheduleModel->getAll();
