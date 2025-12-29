@@ -59,13 +59,22 @@
                 if (data.status === 'success') {
                     scanResult.classList.add('alert-success');
                     scanResult.innerHTML = `<strong>Sukses!</strong> ${data.message}<br>Nama: ${data.detail.nama}`;
-                    // Optional: Play success sound
+                    
+                    // Play success beep
+                    let audio = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+                    audio.play();
+
                 } else if (data.status === 'error') {
                      scanResult.classList.add('alert-danger');
                      scanResult.innerText = data.message;
                 } else {
                     scanResult.classList.add('alert-warning'); // Duplicate usually
                     scanResult.innerText = data.message;
+                    
+                    // TTS for duplicate
+                    let msg = new SpeechSynthesisUtterance("Maaf, sudah absen");
+                    msg.lang = 'id-ID';
+                    window.speechSynthesis.speak(msg);
                 }
                 
                 scanStatus.innerText = "Scan lagi dalam 3 detik...";
