@@ -28,48 +28,67 @@
                 <div class="card mb-4 shadow-sm">
                     <div class="card-header bg-warning text-dark fw-bold">📅 Manajemen Jadwal Ujian</div>
                     <div class="card-body">
+                        <?php 
+                        $is_edit = isset($edit_schedule); 
+                        $form_action = $is_edit ? 'update_schedule' : 'add_schedule';
+                        $form_btn = $is_edit ? 'Simpan Perubahan' : 'Tambah Jadwal';
+                        $form_cancel = $is_edit ? '<a href="dashboard.php" class="btn btn-sm btn-secondary mt-2">Batal</a>' : '';
+                        
+                        // Populate if edit
+                        $e_date = $is_edit ? $edit_schedule['date'] : '';
+                        $e_session = $is_edit ? $edit_schedule['session_name'] : '';
+                        $e_prodi = $is_edit ? $edit_schedule['prodi'] : '';
+                        $e_mk = $is_edit ? $edit_schedule['mata_kuliah'] : '';
+                        $e_start = $is_edit ? $edit_schedule['start_time'] : '';
+                        $e_end = $is_edit ? $edit_schedule['end_time'] : '';
+                        $e_pengawas = $is_edit ? explode(', ', $edit_schedule['pengawas']) : [];
+                        ?>
+                        
                         <form method="POST" class="mb-3">
-                            <input type="hidden" name="action" value="add_schedule">
+                            <input type="hidden" name="action" value="<?= $form_action ?>">
+                            <?php if($is_edit): ?><input type="hidden" name="schedule_id" value="<?= $edit_schedule['id'] ?>"><?php endif; ?>
+                            
                             <div class="row g-2">
                                 <div class="col-6">
                                     <label class="small">Tanggal</label>
-                                    <input type="date" name="date" class="form-control form-control-sm" required>
+                                    <input type="date" name="date" class="form-control form-control-sm" value="<?= $e_date ?>" required>
                                 </div>
                                 <div class="col-6">
                                     <label class="small">Sesi</label>
-                                    <input type="text" name="session" class="form-control form-control-sm" placeholder="Contoh: Sesi 1" required>
+                                    <input type="text" name="session" class="form-control form-control-sm" placeholder="Contoh: Sesi 1" value="<?= $e_session ?>" required>
                                 </div>
                                 <div class="col-12">
                                     <label class="small">Program Studi</label>
                                     <select name="prodi" class="form-select form-select-sm" required>
                                         <option value="">-- Pilih Prodi --</option>
-                                        <option value="PAI">PAI</option>
-                                        <option value="PIAUD">PIAUD</option>
+                                        <option value="PAI" <?= $e_prodi == 'PAI' ? 'selected' : '' ?>>PAI</option>
+                                        <option value="PIAUD" <?= $e_prodi == 'PIAUD' ? 'selected' : '' ?>>PIAUD</option>
                                     </select>
                                 </div>
                                 <div class="col-12">
                                     <label class="small">Mata Kuliah</label>
-                                    <input type="text" name="mata_kuliah" class="form-control form-control-sm" required>
+                                    <input type="text" name="mata_kuliah" class="form-control form-control-sm" value="<?= $e_mk ?>" required>
                                 </div>
                                 <div class="col-12">
-                                    <label class="small">Pengawas (Bisa pilih data banyak)</label>
+                                    <label class="small">Pengawas (Ganti jika berhalangan)</label>
                                     <select name="pengawas[]" class="form-select form-select-sm" multiple style="height: 100px;">
                                         <?php foreach ($supervisors as $spv): ?>
-                                            <option value="<?= htmlspecialchars($spv['nama']) ?>"><?= htmlspecialchars($spv['nama']) ?></option>
+                                            <option value="<?= htmlspecialchars($spv['nama']) ?>" <?= in_array($spv['nama'], $e_pengawas) ? 'selected' : '' ?>><?= htmlspecialchars($spv['nama']) ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                     <small class="text-muted" style="font-size: 0.75rem;">*Tahan CTRL untuk pilih lebih dari satu</small>
                                 </div>
                                 <div class="col-6">
                                     <label class="small">Mulai</label>
-                                    <input type="time" name="start" class="form-control form-control-sm" required>
+                                    <input type="time" name="start" class="form-control form-control-sm" value="<?= $e_start ?>" required>
                                 </div>
                                 <div class="col-6">
                                     <label class="small">Selesai</label>
-                                    <input type="time" name="end" class="form-control form-control-sm" required>
+                                    <input type="time" name="end" class="form-control form-control-sm" value="<?= $e_end ?>" required>
                                 </div>
                             </div>
-                            <button type="submit" class="btn btn-sm btn-warning w-100 mt-2">Tambah Jadwal</button>
+                            <button type="submit" class="btn btn-sm btn-warning w-100 mt-2"><?= $form_btn ?></button>
+                            <?= $form_cancel ?>
                         </form>
 
                         <h6 class="small fw-bold mt-3">Daftar Jadwal</h6>
@@ -82,7 +101,10 @@
                                         <em>MK: <?= htmlspecialchars($s['mata_kuliah'] ?? '-') ?></em><br>
                                         <small>Pengawas: <?= htmlspecialchars($s['pengawas'] ?? '-') ?></small>
                                     </div>
-                                    <a href="?delete_schedule=<?= $s['id'] ?>" class="text-danger" onclick="return confirm('Hapus jadwal?')">&times;</a>
+                                    <div>
+                                        <a href="?edit_schedule=<?= $s['id'] ?>" class="text-primary me-2" title="Ganti Pengawas/Edit">Edit</a>
+                                        <a href="?delete_schedule=<?= $s['id'] ?>" class="text-danger" onclick="return confirm('Hapus jadwal?')">&times;</a>
+                                    </div>
                                 </li>
                             <?php endforeach; ?>
                         </ul>
@@ -267,6 +289,39 @@
 
                     <!-- MASTER USER DATA -->
                     <div class="tab-pane fade" id="master" role="tabpanel">
+                        
+                        <!-- Statistics Cards -->
+                        <div class="row mb-3">
+                            <div class="col-md-6 mb-2">
+                                <div class="card bg-light border-primary">
+                                    <div class="card-body p-2 text-center">
+                                        <h6 class="card-title text-primary mb-0">Statistik Panitia</h6>
+                                        <div class="fs-4 fw-bold">
+                                            <?= $stats['panitia_hadir'] ?> / <?= $stats['panitia_total'] ?>
+                                        </div>
+                                        <small class="text-muted">Hadir / Total</small>
+                                        <div class="progress mt-1" style="height: 5px;">
+                                            <div class="progress-bar bg-primary" role="progressbar" style="width: <?= ($stats['panitia_total'] > 0 ? ($stats['panitia_hadir']/$stats['panitia_total']*100) : 0) ?>%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-2">
+                                <div class="card bg-light border-success">
+                                    <div class="card-body p-2 text-center">
+                                        <h6 class="card-title text-success mb-0">Statistik Pengawas</h6>
+                                        <div class="fs-4 fw-bold">
+                                            <?= $stats['pengawas_hadir'] ?> / <?= $stats['pengawas_total'] ?>
+                                        </div>
+                                        <small class="text-muted">Hadir / Total</small>
+                                        <div class="progress mt-1" style="height: 5px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: <?= ($stats['pengawas_total'] > 0 ? ($stats['pengawas_hadir']/$stats['pengawas_total']*100) : 0) ?>%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="card">
                             <div class="card-header">Data Semua Peserta</div>
                             <div class="card-body">

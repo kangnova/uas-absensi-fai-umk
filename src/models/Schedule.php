@@ -32,6 +32,29 @@ class Schedule {
         ]);
     }
 
+    public function getById($id) {
+        $stmt = $this->pdo->prepare("SELECT * FROM exam_schedules WHERE id = ?");
+        $stmt->execute([$id]);
+        return $stmt->fetch();
+    }
+
+    public function update($id, $data) {
+        $stmt = $this->pdo->prepare("UPDATE exam_schedules SET date = :date, prodi = :prodi, session_name = :session, mata_kuliah = :mk, start_time = :start, end_time = :end, pengawas = :pengawas WHERE id = :id");
+        
+        $pengawas = is_array($data['pengawas']) ? implode(', ', $data['pengawas']) : $data['pengawas'];
+
+        return $stmt->execute([
+            'id' => $id,
+            'date' => $data['date'],
+            'prodi' => $data['prodi'],
+            'session' => $data['session'],
+            'mk' => $data['mata_kuliah'],
+            'start' => $data['start'],
+            'end' => $data['end'],
+            'pengawas' => $pengawas
+        ]);
+    }
+    
     public function delete($id) {
         return $this->pdo->prepare("DELETE FROM exam_schedules WHERE id = ?")->execute([$id]);
     }
