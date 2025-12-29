@@ -60,6 +60,7 @@
                                 <tr>
                                     <th>Nama</th>
                                     <th>Jabatan</th>
+                                    <th>QR Code</th>
                                     <th>Aksi</th>
                                 </tr>
                             </thead>
@@ -68,9 +69,19 @@
                                 <tr>
                                     <td><?= htmlspecialchars($u['nama']) ?><br><small class="text-muted"><?= htmlspecialchars($u['nip_nidn']) ?></small></td>
                                     <td><?= htmlspecialchars($u['jabatan']) ?></td>
+                                    <td class="text-center">
+                                        <?php if (!empty($u['qr_image'])): ?>
+                                            <img src="../uploads/qrcodes/<?= htmlspecialchars($u['qr_image']) ?>" alt="QR" style="width: 50px; height: 50px;">
+                                        <?php else: ?>
+                                            <span class="text-muted small">-</span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td>
-                                        <a href="generate-qr.php?user_id=<?= $u['id'] ?>" target="_blank" class="btn btn-sm btn-info text-white">QR</a>
-                                        <a href="?delete=<?= $u['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Hapus?')">Del</a>
+                                        <div class="btn-group">
+                                            <a href="generate-qr.php?user_id=<?= $u['id'] ?>" target="_blank" class="btn btn-sm btn-info text-white" title="Generate QR">QR</a>
+                                            <a href="detail.php?id=<?= $u['id'] ?>" class="btn btn-sm btn-primary" title="Detail">Det</a>
+                                            <a href="?delete=<?= $u['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Hapus?')" title="Hapus">Del</a>
+                                        </div>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>

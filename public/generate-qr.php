@@ -52,8 +52,12 @@ $uploadDir = __DIR__ . '/../uploads/qrcodes/';
 if (!is_dir($uploadDir)) {
     mkdir($uploadDir, 0755, true);
 }
-$fileName = 'qr_user_' . $user['id'] . '.png';
+$sanitized_name = preg_replace('/[^a-zA-Z0-9_-]/', '_', $user['nama']);
+$fileName = 'qr_' . $sanitized_name . '.png';
 $result->saveToFile($uploadDir . $fileName);
+
+// Update user record with QR image filename
+$userModel->updateQrImage($user['id'], $fileName);
 
 // Output image to browser
 header('Content-Type: ' . $result->getMimeType());

@@ -46,4 +46,9 @@ class User {
         $stmt = $this->pdo->prepare("UPDATE users SET qr_token = :token WHERE id = :id");
         return $stmt->execute(['token' => $token, 'id' => $id]);
     }
+
+    public function updateQrImage($id, $imageName) {
+        $stmt = $this->pdo->prepare("UPDATE users SET qr_image = :image WHERE id = :id");
+        return $stmt->execute(['image' => $imageName, 'id' => $id]);
+    }
 }
