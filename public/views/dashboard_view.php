@@ -131,10 +131,13 @@
             <!-- RIGHT COLUMN: Reports & Data -->
             <div class="col-md-8">
                 
-                <!-- TABS FOR PRODI -->
+                <!-- TABS -->
                 <ul class="nav nav-tabs mb-3" id="mainTab" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="pai-tab" data-bs-toggle="tab" data-bs-target="#pai" type="button" role="tab">📚 PRODI PAI</button>
+                        <button class="nav-link active" id="panitia-tab" data-bs-toggle="tab" data-bs-target="#panitia" type="button" role="tab">👔 LAPORAN PANITIA</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="pai-tab" data-bs-toggle="tab" data-bs-target="#pai" type="button" role="tab">📚 PRODI PAI</button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="piaud-tab" data-bs-toggle="tab" data-bs-target="#piaud" type="button" role="tab">🧸 PRODI PIAUD</button>
@@ -146,119 +149,120 @@
 
                 <div class="tab-content" id="mainTabContent">
                     
-                    <!-- PAI REPORT -->
-                    <div class="tab-pane fade show active" id="pai" role="tabpanel">
-                        <?php 
-                        $users_pai = array_filter($users, fn($u) => $u['prodi'] === 'PAI');
-                        ?>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6 class="text-primary border-bottom pb-2">📋 Laporan Panitia (PAI)</h6>
-                                <table class="table table-bordered table-sm small">
-                                    <thead class="table-light"><tr><th>Nama</th><th>Status Kehadiran</th></tr></thead>
-                                    <tbody>
-                                        <?php foreach ($users_pai as $u): if(strpos($u['jabatan'], 'Panitia') !== false): ?>
-                                            <?php 
-                                            // Simple check if present in recent attendance (this logic assumes single day/session for simplicity in view, ideally filter by active schedule)
-                                            $present = false; 
-                                            foreach($attendance as $a) { if($a['user_id'] == $u['id']) $present = $a; }
-                                            ?>
-                                            <tr>
-                                                <td><?= htmlspecialchars($u['nama']) ?></td>
-                                                <td>
-                                                    <?php if($present): ?>
-                                                        <span class="badge bg-success">Hadir: <?= date('H:i', strtotime($present['timestamp_in'])) ?></span>
-                                                    <?php else: ?>
-                                                        <span class="badge bg-secondary">Belum Hadir</span>
-                                                    <?php endif; ?>
-                                                </td>
-                                            </tr>
-                                        <?php endif; endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="col-md-6">
-                                <h6 class="text-success border-bottom pb-2">📋 Laporan Pengawas (PAI)</h6>
-                                <table class="table table-bordered table-sm small">
-                                    <thead class="table-light"><tr><th>Nama</th><th>Status Kehadiran</th></tr></thead>
-                                    <tbody>
-                                        <?php foreach ($users_pai as $u): if(strpos($u['jabatan'], 'Pengawas') !== false): ?>
-                                            <?php 
-                                            $present = false; 
-                                            foreach($attendance as $a) { if($a['user_id'] == $u['id']) $present = $a; }
-                                            ?>
-                                            <tr>
-                                                <td><?= htmlspecialchars($u['nama']) ?></td>
-                                                <td>
-                                                    <?php if($present): ?>
-                                                        <span class="badge bg-success">Hadir: <?= date('H:i', strtotime($present['timestamp_in'])) ?></span>
-                                                    <?php else: ?>
-                                                        <span class="badge bg-secondary">Belum Hadir</span>
-                                                    <?php endif; ?>
-                                                </td>
-                                            </tr>
-                                        <?php endif; endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                    <?php
+                    // Helper to sort by presence
+                    function sortByPresence($users, $attendance) {
+                        $present = [];
+                        $absent = [];
+                        foreach ($users as $u) {
+                            $is_present = false;
+                            foreach ($attendance as $a) {
+                                if ($a['user_id'] == $u['id']) {
+                                    $u['attendance_info'] = $a; // Attach attendance info
+                                    $is_present = true;
+                                    break;
+                                }
+                            }
+                            if ($is_present) {
+                                $present[] = $u;
+                            } else {
+                                $u['attendance_info'] = null;
+                                $absent[] = $u;
+                            }
+                        }
+                        // Sort present by time (desc) if needed, currently just listing
+                        return array_merge($present, $absent);
+                    }
+
+                    // Prepare Data
+                    $all_panitia = array_filter($users, fn($u) => strpos($u['jabatan'], 'Panitia') !== false);
+                    $pengawas_pai = array_filter($users, fn($u) => strpos($u['jabatan'], 'Pengawas') !== false && $u['prodi'] === 'PAI');
+                    $pengawas_piaud = array_filter($users, fn($u) => strpos($u['jabatan'], 'Pengawas') !== false && $u['prodi'] === 'PIAUD');
+
+                    $sorted_panitia = sortByPresence($all_panitia, $attendance);
+                    $sorted_pai = sortByPresence($pengawas_pai, $attendance);
+                    $sorted_piaud = sortByPresence($pengawas_piaud, $attendance);
+                    ?>
+
+                    <!-- PANITIA REPORT (UNIFIED) -->
+                    <div class="tab-pane fade show active" id="panitia" role="tabpanel">
+                        <h6 class="text-dark border-bottom pb-2">📋 Laporan Kehadiran Panitia (Gabungan)</h6>
+                        <table class="table table-bordered table-sm small table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Nama</th>
+                                    <th>Status Kehadiran</th>
+                                    <th>Sesi Jadwal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($sorted_panitia as $u): ?>
+                                    <tr class="<?= !empty($u['attendance_info']) ? 'table-success' : '' ?>">
+                                        <td><?= htmlspecialchars($u['nama'] ?? '') ?></td>
+                                        <td>
+                                            <?php if (!empty($u['attendance_info'])): ?>
+                                                <span class="badge bg-success">Hadir: <?= date('H:i', strtotime($u['attendance_info']['timestamp_in'])) ?></span>
+                                            <?php else: ?>
+                                                <span class="badge bg-secondary">Belum Hadir</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td>
+                                            <?php if (!empty($u['attendance_info']['session_name'])): ?>
+                                                <?= htmlspecialchars($u['attendance_info']['session_name']) ?>
+                                            <?php else: ?>
+                                                -
+                                            <?php endif; ?>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </div>
 
-                    <!-- PIAUD REPORT -->
+                    <!-- PRODI PAI REPORT -->
+                    <div class="tab-pane fade" id="pai" role="tabpanel">
+                        <h6 class="text-primary border-bottom pb-2">📋 Laporan Pengawas (PAI)</h6>
+                        <table class="table table-bordered table-sm small table-hover">
+                            <thead class="table-light"><tr><th>Nama</th><th>Status Kehadiran</th><th>Sesi Jadwal</th></tr></thead>
+                            <tbody>
+                                <?php foreach ($sorted_pai as $u): ?>
+                                    <tr class="<?= !empty($u['attendance_info']) ? 'table-success' : '' ?>">
+                                        <td><?= htmlspecialchars($u['nama'] ?? '') ?></td>
+                                        <td>
+                                            <?php if (!empty($u['attendance_info'])): ?>
+                                                <span class="badge bg-success">Hadir: <?= date('H:i', strtotime($u['attendance_info']['timestamp_in'])) ?></span>
+                                            <?php else: ?>
+                                                <span class="badge bg-secondary">Belum Hadir</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td><?= $u['attendance_info']['session_name'] ?? '-' ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- PRODI PIAUD REPORT -->
                     <div class="tab-pane fade" id="piaud" role="tabpanel">
-                         <?php 
-                        $users_piaud = array_filter($users, fn($u) => $u['prodi'] === 'PIAUD');
-                        ?>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6 class="text-primary border-bottom pb-2">📋 Laporan Panitia (PIAUD)</h6>
-                                <table class="table table-bordered table-sm small">
-                                    <thead class="table-light"><tr><th>Nama</th><th>Status Kehadiran</th></tr></thead>
-                                    <tbody>
-                                        <?php foreach ($users_piaud as $u): if(strpos($u['jabatan'], 'Panitia') !== false): ?>
-                                            <?php 
-                                            $present = false; 
-                                            foreach($attendance as $a) { if($a['user_id'] == $u['id']) $present = $a; }
-                                            ?>
-                                            <tr>
-                                                <td><?= htmlspecialchars($u['nama']) ?></td>
-                                                <td>
-                                                    <?php if($present): ?>
-                                                        <span class="badge bg-success">Hadir: <?= date('H:i', strtotime($present['timestamp_in'])) ?></span>
-                                                    <?php else: ?>
-                                                        <span class="badge bg-secondary">Belum Hadir</span>
-                                                    <?php endif; ?>
-                                                </td>
-                                            </tr>
-                                        <?php endif; endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="col-md-6">
-                                <h6 class="text-success border-bottom pb-2">📋 Laporan Pengawas (PIAUD)</h6>
-                                <table class="table table-bordered table-sm small">
-                                    <thead class="table-light"><tr><th>Nama</th><th>Status Kehadiran</th></tr></thead>
-                                    <tbody>
-                                        <?php foreach ($users_piaud as $u): if(strpos($u['jabatan'], 'Pengawas') !== false): ?>
-                                            <?php 
-                                            $present = false; 
-                                            foreach($attendance as $a) { if($a['user_id'] == $u['id']) $present = $a; }
-                                            ?>
-                                            <tr>
-                                                <td><?= htmlspecialchars($u['nama']) ?></td>
-                                                <td>
-                                                    <?php if($present): ?>
-                                                        <span class="badge bg-success">Hadir: <?= date('H:i', strtotime($present['timestamp_in'])) ?></span>
-                                                    <?php else: ?>
-                                                        <span class="badge bg-secondary">Belum Hadir</span>
-                                                    <?php endif; ?>
-                                                </td>
-                                            </tr>
-                                        <?php endif; endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                        <h6 class="text-success border-bottom pb-2">📋 Laporan Pengawas (PIAUD)</h6>
+                        <table class="table table-bordered table-sm small table-hover">
+                            <thead class="table-light"><tr><th>Nama</th><th>Status Kehadiran</th><th>Sesi Jadwal</th></tr></thead>
+                            <tbody>
+                                <?php foreach ($sorted_piaud as $u): ?>
+                                    <tr class="<?= !empty($u['attendance_info']) ? 'table-success' : '' ?>">
+                                        <td><?= htmlspecialchars($u['nama'] ?? '') ?></td>
+                                        <td>
+                                            <?php if (!empty($u['attendance_info'])): ?>
+                                                <span class="badge bg-success">Hadir: <?= date('H:i', strtotime($u['attendance_info']['timestamp_in'])) ?></span>
+                                            <?php else: ?>
+                                                <span class="badge bg-secondary">Belum Hadir</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td><?= $u['attendance_info']['session_name'] ?? '-' ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
                     </div>
 
                     <!-- MASTER USER DATA -->
