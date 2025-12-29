@@ -16,11 +16,16 @@ class User {
     }
 
     public function create($data) {
-        $stmt = $this->pdo->prepare("INSERT INTO users (nama, nip_nidn, jabatan, qr_token) VALUES (:nama, :nip, :jabatan, :token)");
+        $stmt = $this->pdo->prepare("INSERT INTO users (nama, nip_nidn, jabatan, prodi, qr_token) VALUES (:nama, :nip, :jabatan, :prodi, :token)");
+        
+        // Handle jabatan if array (for checkboxes)
+        $jabatan = is_array($data['jabatan']) ? implode(',', $data['jabatan']) : $data['jabatan'];
+
         return $stmt->execute([
             'nama' => $data['nama'],
             'nip' => $data['nip'],
-            'jabatan' => $data['jabatan'],
+            'jabatan' => $jabatan,
+            'prodi' => $data['prodi'],
             'token' => $data['token']
         ]);
     }
