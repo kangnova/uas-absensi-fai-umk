@@ -26,7 +26,10 @@
                 
                 <!-- SCHEDULE MANAGEMENT -->
                 <div class="card mb-4 shadow-sm">
-                    <div class="card-header bg-warning text-dark fw-bold">📅 Manajemen Jadwal Ujian</div>
+                    <div class="card-header bg-warning text-dark fw-bold d-flex justify-content-between align-items-center">
+                        <span>📅 Manajemen Jadwal Ujian</span>
+                        <button class="btn btn-sm btn-dark" data-bs-toggle="modal" data-bs-target="#importScheduleModal">Import CSV</button>
+                    </div>
                     <div class="card-body">
                         <?php 
                         $is_edit = isset($edit_schedule); 
@@ -115,7 +118,10 @@
 
                 <!-- USER MANAGEMENT -->
                 <div class="card mb-4 shadow-sm">
-                    <div class="card-header bg-primary text-white fw-bold">👥 Tambah Peserta Data</div>
+                    <div class="card-header bg-primary text-white fw-bold d-flex justify-content-between align-items-center">
+                        <span>👥 Tambah Peserta Data</span>
+                        <button class="btn btn-sm btn-light text-primary" data-bs-toggle="modal" data-bs-target="#importUserModal">Import CSV</button>
+                    </div>
                     <div class="card-body">
                         <form method="POST">
                             <input type="hidden" name="action" value="add_user">
@@ -433,6 +439,58 @@
         </div>
     </div>
     
+    <!-- Import User Modal -->
+    <div class="modal fade" id="importUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Import Data User (CSV)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Unduh template sebelum upload: <a href="?action=template_user" class="btn btn-sm btn-outline-primary">Download Template CSV</a></p>
+                    <hr>
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="action" value="import_users">
+                        <div class="mb-3">
+                            <label class="form-label">Upload File CSV</label>
+                            <input type="file" name="file" class="form-control" accept=".csv" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Upload & Import</button>
+                    </form>
+                    <small class="text-muted d-block mt-2">
+                        * Format: Nama, NIP, Jabatan, Prodi<br>
+                        * NIP yang sama akan diupdate (merge jabatan).
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Schedule Modal -->
+    <div class="modal fade" id="importScheduleModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Import Jadwal Ujian (CSV)</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Unduh template sebelum upload: <a href="?action=template_schedule" class="btn btn-sm btn-outline-primary">Download Template CSV</a></p>
+                    <hr>
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="hidden" name="action" value="import_schedules">
+                        <div class="mb-3">
+                            <label class="form-label">Upload File CSV</label>
+                            <input type="file" name="file" class="form-control" accept=".csv" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Upload & Import</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

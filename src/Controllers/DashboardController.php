@@ -20,8 +20,101 @@ class DashboardController {
     public function index() {
         $success_msg = null;
         $error_msg = null;
+        // Handle Template Downloads
+        if (isset($_GET['action'])) {
+            if ($_GET['action'] === 'template_user') {
+                header('Content-Type: text/csv');
+                header('Content-Disposition: attachment; filename="template_users.csv"');
+                $output = fopen('php://output', 'w');
+                fputcsv($output, ['Nama Lengkap', 'NIP/NIDN', 'Jabatan (Panitia/Pengawas)', 'Prodi (PAI/PIAUD)']);
+                fputcsv($output, ['Contoh Nama', '123456789', 'Pengawas', 'PAI']);
+                fputcsv($output, ['Contoh Panitia', '987654321', 'Panitia', 'PAI']);
+                fclose($output);
+                exit;
+            }
+            if ($_GET['action'] === 'template_schedule') {
+                header('Content-Type: text/csv');
+                header('Content-Disposition: attachment; filename="template_jadwal.csv"');
+                $output = fopen('php://output', 'w');
+                fputcsv($output, ['Tanggal (YYYY-MM-DD)', 'Sesi', 'Prodi', 'Mata Kuliah', 'Mulai (HH:MM)', 'Selesai (HH:MM)', 'Pengawas (Pisahkan koma)']);
+                fputcsv($output, ['2025-01-20', 'Sesi 1', 'PAI', 'Filsafat', '08:00', '10:00', 'Budi Santoso, Siti Aminah']);
+                fclose($output);
+                exit;
+            }
+        }
 
-        // Handle Add User
+        // Handle Import Users
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'import_users') {
+            if (isset($_FILES['file']) && $_FILES['file']['error'] == 0) {
+                $file = fopen($_FILES['file']['tmp_name'], 'r');
+                fgetcsv($file); // Skip header
+                $count = 0;
+                while (($row = fgetcsv($file)) !== false) {
+                    if (count($row) < 4) continue;
+                    $nama = $row[0];
+                    $nip = $row[1];
+                    $jabatan = $row[2]; // Can be "Panitia" or "Panitia, Pengawas"
+                    $prodi = $row[3];
+
+                    // Check if NIP exists
+                    $existing = $this->userModel->findByNip($nip);
+                    if ($existing) {
+                        // Merge Jabatan
+                        $current_roles = explode(',', $existing['jabatan']);
+                        $new_roles = explode(',', $jabatan);
+                        $merged_roles = array_unique(array_merge($current_roles, array_map('trim', $new_roles)));
+                        
+                        // Update
+                        $this->userModel->update($existing['id'], [
+                            'nama' => $nama, // Update name just in case
+                            'jabatan' => $merged_roles, // Array
+                            'prodi' => $prodi // Update prodi
+                        ]);
+                    } else {
+                        // Create
+                        $this->userModel->create([
+                            'nama' => $nama,
+                            'nip' => $nip,
+                            'jabatan' => $jabatan,
+                            'prodi' => $prodi,
+                            'token' => bin2hex(random_bytes(16))
+                        ]);
+                    }
+                    $count++;
+                }
+                fclose($file);
+                $success_msg = "Berhasil import $count data users.";
+            } else {
+                $error_msg = "Gagal upload file.";
+            }
+        }
+
+        // Handle Import Schedules
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'import_schedules') {
+            if (isset($_FILES['file']) && $_FILES['file']['error'] == 0) {
+                $file = fopen($_FILES['file']['tmp_name'], 'r');
+                fgetcsv($file); // Skip header
+                $count = 0;
+                while (($row = fgetcsv($file)) !== false) {
+                    if (count($row) < 7) continue;
+                    $this->scheduleModel->create([
+                        'date' => $row[0],
+                        'session' => $row[1],
+                        'prodi' => $row[2],
+                        'mata_kuliah' => $row[3],
+                        'start' => $row[4],
+                        'end' => $row[5],
+                        'pengawas' => $row[6] // String from CSV
+                    ]);
+                    $count++;
+                }
+                fclose($file);
+                $success_msg = "Berhasil import $count jadwal.";
+            } else {
+                $error_msg = "Gagal upload file.";
+            }
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_user') {
             try {
                 // Checkboxes for jabatan
@@ -30,14 +123,31 @@ class DashboardController {
                     throw new \Exception("Minimal pilih satu jabatan.");
                 }
 
-                $this->userModel->create([
-                    'nama' => $_POST['nama'],
-                    'nip' => $_POST['nip'],
-                    'jabatan' => $jabatan,
-                    'prodi' => $_POST['prodi'],
-                    'token' => bin2hex(random_bytes(16))
-                ]);
-                $success_msg = "User berhasil ditambahkan.";
+                $nip = $_POST['nip'];
+                // Check duplicates Logic for Manual Add
+                $existing = $this->userModel->findByNip($nip);
+                
+                if ($existing) {
+                    // Update existing
+                    $current_roles = explode(',', $existing['jabatan']);
+                    $merged_roles = array_unique(array_merge($current_roles, $jabatan));
+                    
+                    $this->userModel->update($existing['id'], [
+                        'nama' => $_POST['nama'],
+                        'jabatan' => $merged_roles,
+                        'prodi' => $_POST['prodi']
+                    ]);
+                    $success_msg = "User dengan NIP $nip sudah ada. Data diperbarui (Jabatan digabung).";
+                } else {
+                    $this->userModel->create([
+                        'nama' => $_POST['nama'],
+                        'nip' => $_POST['nip'],
+                        'jabatan' => $jabatan,
+                        'prodi' => $_POST['prodi'],
+                        'token' => bin2hex(random_bytes(16))
+                    ]);
+                    $success_msg = "User berhasil ditambahkan.";
+                }
             } catch (\Exception $e) {
                 $error_msg = "Error: " . $e->getMessage();
             }

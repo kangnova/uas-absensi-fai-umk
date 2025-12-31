@@ -47,6 +47,25 @@ class User {
         return $stmt->fetch();
     }
 
+    public function findByNip($nip) {
+        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE nip_nidn = :nip");
+        $stmt->execute(['nip' => $nip]);
+        return $stmt->fetch();
+    }
+
+    public function update($id, $data) {
+        $stmt = $this->pdo->prepare("UPDATE users SET nama = :nama, jabatan = :jabatan, prodi = :prodi WHERE id = :id");
+        // Jabatan array handling
+        $jabatan = is_array($data['jabatan']) ? implode(',', $data['jabatan']) : $data['jabatan'];
+        
+        return $stmt->execute([
+            'id' => $id,
+            'nama' => $data['nama'],
+            'jabatan' => $jabatan,
+            'prodi' => $data['prodi']
+        ]);
+    }
+
     public function updateToken($id, $token) {
         $stmt = $this->pdo->prepare("UPDATE users SET qr_token = :token WHERE id = :id");
         return $stmt->execute(['token' => $token, 'id' => $id]);
