@@ -47,9 +47,15 @@ class DashboardController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'import_users') {
             if (isset($_FILES['file']) && $_FILES['file']['error'] == 0) {
                 $file = fopen($_FILES['file']['tmp_name'], 'r');
-                fgetcsv($file); // Skip header
+                
+                // Detect Delimiter
+                $firstLine = fgets($file);
+                $delimiter = (substr_count($firstLine, ';') > substr_count($firstLine, ',')) ? ';' : ',';
+                rewind($file);
+
+                fgetcsv($file, 0, $delimiter); // Skip header
                 $count = 0;
-                while (($row = fgetcsv($file)) !== false) {
+                while (($row = fgetcsv($file, 0, $delimiter)) !== false) {
                     if (count($row) < 4) continue;
                     $nama = $row[0];
                     $nip = $row[1];
@@ -93,9 +99,15 @@ class DashboardController {
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'import_schedules') {
             if (isset($_FILES['file']) && $_FILES['file']['error'] == 0) {
                 $file = fopen($_FILES['file']['tmp_name'], 'r');
-                fgetcsv($file); // Skip header
+                
+                // Detect Delimiter
+                $firstLine = fgets($file);
+                $delimiter = (substr_count($firstLine, ';') > substr_count($firstLine, ',')) ? ';' : ',';
+                rewind($file);
+
+                fgetcsv($file, 0, $delimiter); // Skip header
                 $count = 0;
-                while (($row = fgetcsv($file)) !== false) {
+                while (($row = fgetcsv($file, 0, $delimiter)) !== false) {
                     if (count($row) < 7) continue;
                     $this->scheduleModel->create([
                         'date' => $row[0],
