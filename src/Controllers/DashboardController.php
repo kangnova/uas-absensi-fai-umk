@@ -41,6 +41,52 @@ class DashboardController {
                 fclose($output);
                 exit;
             }
+            // Handle Report View
+            if ($_GET['action'] === 'report' && isset($_GET['id'])) {
+                $user = $this->userModel->getById($_GET['id']);
+                if (!$user) die("User not found");
+
+                $schedules = $this->scheduleModel->getAll();
+                $all_attendance = $this->attendanceModel->getAll(); // Need all to filter
+                
+                // Calculate Stats
+                $this->calculateUserStats($user, $schedules, $all_attendance);
+
+                // Prepare Detailed Report Data
+                $report_data = [];
+                // Sort schedules by date
+                
+                // For Panitia: Show ALL schedules
+                // For Pengawas: Show ASSIGNED schedules
+                $is_panitia = strpos($user['jabatan'], 'Panitia') !== false;
+                
+                foreach ($schedules as $s) {
+                    $is_assigned = (isset($s['pengawas']) && strpos($s['pengawas'], $user['nama']) !== false);
+                    
+                    if ($is_panitia || $is_assigned) {
+                        // Check attendance
+                        $att_info = null;
+                        foreach ($all_attendance as $a) {
+                            if ($a['user_id'] == $user['id'] && $a['schedule_id'] == $s['id']) {
+                                $att_info = $a;
+                                break;
+                            }
+                        }
+                        
+                        $report_data[] = [
+                            'date' => $s['date'],
+                            'session' => $s['session_name'],
+                            'mk' => $s['mata_kuliah'],
+                            'role' => $is_assigned ? 'Pengawas/Bertugas' : 'Panitia',
+                            'status' => $att_info ? 'Hadir' : 'Tidak Hadir',
+                            'time_in' => $att_info ? date('H:i:s', strtotime($att_info['timestamp_in'])) : '-'
+                        ];
+                    }
+                }
+
+                require __DIR__ . '/../../public/views/report_view.php';
+                exit;
+            }
         }
 
         // Handle Import Users
@@ -260,53 +306,62 @@ class DashboardController {
             ];
 
             // 1. Calculate Target
-            if (strpos($u['jabatan'], 'Panitia') !== false) {
-                // Panitia target = All schedules
-                $u['stats']['target'] = count($schedules);
-            } elseif (strpos($u['jabatan'], 'Pengawas') !== false) {
-                // Pengawas target = Schedules where they are listed
-                $my_schedules = 0;
-                foreach ($schedules as $sch) {
-                    if (isset($sch['pengawas']) && strpos($sch['pengawas'], $u['nama']) !== false) {
-                        $my_schedules++;
-                    }
-                }
-                $u['stats']['target'] = $my_schedules;
-            }
-
-            // 1.5 Calculate Substitute Duty (If NOT Pengawas but assigned)
-            $u['stats']['substitution_count'] = 0;
-            if (strpos($u['jabatan'], 'Pengawas') === false) {
-                 foreach ($schedules as $sch) {
-                    if (isset($sch['pengawas']) && strpos($sch['pengawas'], $u['nama']) !== false) {
-                        $u['stats']['substitution_count']++;
-                    }
-                }
-                // If they have substitution duties, add to target? 
-                // User requirement: "tanda untuk panitia tersebut menggantikan".
-                // We keep it separate for badge.
-            }
-
-            // 2. Calculate Hadir (Actual Presence)
-            // Filter attendance for this user
-            $my_attendance = array_filter($all_attendance, fn($a) => $a['user_id'] == $u['id']);
-            $u['stats']['hadir'] = count($my_attendance);
-
-            // 3. Calculate Absen
-            $u['stats']['absen'] = max(0, $u['stats']['target'] - $u['stats']['hadir']);
-
-            // Update Global Stats (Accumulate Actual vs Target)
-             if (strpos($u['jabatan'], 'Panitia') !== false) {
-                $stats['panitia_total_target'] += $u['stats']['target'];
-                $stats['panitia_hadir'] += $u['stats']['hadir'];
-            } 
-            if (strpos($u['jabatan'], 'Pengawas') !== false) {
-                $stats['pengawas_total_target'] += $u['stats']['target'];
-                $stats['pengawas_hadir'] += $u['stats']['hadir'];
-            }
+            $this->calculateUserStats($u, $schedules, $all_attendance, $stats);
         }
         unset($u); // Break reference
 
         require __DIR__ . '/../../public/views/dashboard_view.php';
+    }
+
+    private function calculateUserStats(&$u, $schedules, $all_attendance, &$global_stats = null) {
+        $u['stats'] = [
+            'target' => 0,
+            'hadir' => 0,
+            'absen' => 0,
+            'substitution_count' => 0
+        ];
+
+        // 1. Calculate Target
+        if (strpos($u['jabatan'], 'Panitia') !== false) {
+            // Panitia target = All schedules
+            $u['stats']['target'] = count($schedules);
+        } elseif (strpos($u['jabatan'], 'Pengawas') !== false) {
+            // Pengawas target = Schedules where they are listed
+            $my_schedules = 0;
+            foreach ($schedules as $sch) {
+                if (isset($sch['pengawas']) && strpos($sch['pengawas'], $u['nama']) !== false) {
+                    $my_schedules++;
+                }
+            }
+            $u['stats']['target'] = $my_schedules;
+        }
+
+        // 1.5 Substitution Count
+        if (strpos($u['jabatan'], 'Pengawas') === false) {
+             foreach ($schedules as $sch) {
+                if (isset($sch['pengawas']) && strpos($sch['pengawas'], $u['nama']) !== false) {
+                    $u['stats']['substitution_count']++;
+                }
+            }
+        }
+
+        // 2. Calculate Hadir
+        $my_attendance = array_filter($all_attendance, fn($a) => $a['user_id'] == $u['id']);
+        $u['stats']['hadir'] = count($my_attendance);
+
+        // 3. Calculate Absen
+        $u['stats']['absen'] = max(0, $u['stats']['target'] - $u['stats']['hadir']);
+
+        // Update Global Stats if provided
+        if ($global_stats !== null) {
+             if (strpos($u['jabatan'], 'Panitia') !== false) {
+                $global_stats['panitia_total_target'] += $u['stats']['target'];
+                $global_stats['panitia_hadir'] += $u['stats']['hadir'];
+            } 
+            if (strpos($u['jabatan'], 'Pengawas') !== false) {
+                $global_stats['pengawas_total_target'] += $u['stats']['target'];
+                $global_stats['pengawas_hadir'] += $u['stats']['hadir'];
+            }
+        }
     }
 }

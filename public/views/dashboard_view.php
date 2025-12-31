@@ -421,6 +421,7 @@
                                             <td>
                                                 <div class="btn-group">
                                                     <a href="generate-qr.php?user_id=<?= $u['id'] ?>" target="_blank" class="btn btn-sm btn-info text-white" title="Generate QR">QR</a>
+                                                    <a href="?action=report&id=<?= $u['id'] ?>" class="btn btn-sm btn-dark" title="Cetak Laporan">Laporan</a>
                                                     <a href="detail.php?id=<?= $u['id'] ?>" class="btn btn-sm btn-primary" title="Detail">Det</a>
                                                     <a href="?delete=<?= $u['id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Hapus?')" title="Hapus">Del</a>
                                                 </div>
