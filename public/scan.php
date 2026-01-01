@@ -27,6 +27,7 @@
 
                 <div class="mt-4">
                     <a href="index.php" class="btn btn-secondary">Kembali ke Home</a>
+                    <a href="manual_attendance.php" class="btn btn-outline-primary">Absen Manual</a>
                 </div>
             </div>
         </div>

@@ -11,6 +11,7 @@
             <a class="navbar-brand" href="#">Absensi UAS FAI</a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" href="index.php">Home</a>
+                <a class="nav-link" href="manual_attendance.php">Absen Manual</a>
                 <a class="nav-link" href="scan.php">Scanner</a>
             </div>
         </div>

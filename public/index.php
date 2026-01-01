@@ -28,6 +28,9 @@
                     <a href="scan.php" class="btn btn-lg btn-success shadow-sm">
                         📸 Scan Absensi
                     </a>
+                    <a href="manual_attendance.php" class="btn btn-lg btn-secondary shadow-sm">
+                        📝 Absen Manual
+                    </a>
                     <a href="dashboard.php" class="btn btn-lg btn-outline-primary shadow-sm">
                         📊 Dashboard Admin
                     </a>
