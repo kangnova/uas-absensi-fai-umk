@@ -44,6 +44,35 @@
                     </tr>
                 </table>
 
+                <?php
+                // Calculate Public URL
+                $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http");
+                $host = $_SERVER['HTTP_HOST'];
+                $path = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
+                $qr_url = "$protocol://$host$path/generate-qr.php?user_id=" . $user['id'];
+                ?>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Link Akses QR Code (Publik)</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" value="<?= $qr_url ?>" id="qrLink" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyLink()">Salin URL</button>
+                    </div>
+                    <small class="text-muted">Bagikan link ini kepada <?= htmlspecialchars($user['nama']) ?> agar mereka dapat melihat QR Code mereka.</small>
+                </div>
+
+                <script>
+                function copyLink() {
+                    var copyText = document.getElementById("qrLink");
+                    copyText.select();
+                    copyText.setSelectionRange(0, 99999); // Mobile
+                    navigator.clipboard.writeText(copyText.value).then(function() {
+                        alert("Link berhasil disalin!");
+                    }, function(err) {
+                        alert("Gagal menyalin link: " + err);
+                    });
+                }
+                </script>
+
                 <div class="d-grid gap-2">
                     <a href="generate-qr.php?user_id=<?= $user['id'] ?>" class="btn btn-success" target="_blank">Generate Ulang QR Code</a>
                     <a href="dashboard.php" class="btn btn-secondary">Kembali ke Dashboard</a>
