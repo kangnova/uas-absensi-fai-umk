@@ -79,7 +79,7 @@
                                     <select name="pengawas[]" class="form-select form-select-sm" multiple style="height: 100px;">
                                         <?php foreach ($supervisors as $spv): ?>
                                             <option value="<?= htmlspecialchars($spv['nama']) ?>" <?= in_array($spv['nama'], $e_pengawas) ? 'selected' : '' ?>>
-                                                <?= htmlspecialchars($spv['nama']) ?> (<?= htmlspecialchars($spv['jabatan']) ?>)
+                                                <?= htmlspecialchars($spv['nama']) ?> (<?= htmlspecialchars($spv['jabatan']) ?> - <?= htmlspecialchars($spv['prodi'] ?? '-') ?>)
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
