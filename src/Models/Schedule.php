@@ -15,6 +15,12 @@ class Schedule {
         return $stmt->fetchAll();
     }
 
+    public function getByDate($date) {
+        $stmt = $this->pdo->prepare("SELECT * FROM exam_schedules WHERE date = :date ORDER BY start_time ASC");
+        $stmt->execute(['date' => $date]);
+        return $stmt->fetchAll();
+    }
+
     public function create($data) {
         $stmt = $this->pdo->prepare("INSERT INTO exam_schedules (date, prodi, session_name, mata_kuliah, start_time, end_time, pengawas) VALUES (:date, :prodi, :session, :mk, :start, :end, :pengawas)");
         

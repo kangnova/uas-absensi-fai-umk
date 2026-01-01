@@ -1,3 +1,10 @@
+<?php
+session_start();
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    header("Location: login.php");
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -33,6 +40,9 @@
                     </a>
                     <a href="dashboard.php" class="btn btn-lg btn-outline-primary shadow-sm">
                         📊 Dashboard Admin
+                    </a>
+                    <a href="logout.php" class="btn btn-lg btn-danger shadow-sm mt-3">
+                        🚪 Keluar
                     </a>
                 </div>
 

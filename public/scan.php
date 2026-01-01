@@ -1,3 +1,10 @@
+<?php
+session_start();
+if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    header("Location: login.php");
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -28,6 +35,7 @@
                 <div class="mt-4">
                     <a href="index.php" class="btn btn-secondary">Kembali ke Home</a>
                     <a href="manual_attendance.php" class="btn btn-outline-primary">Absen Manual</a>
+                    <a href="logout.php" class="btn btn-danger">Keluar</a>
                 </div>
             </div>
         </div>

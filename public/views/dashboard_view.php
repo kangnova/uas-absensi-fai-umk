@@ -13,6 +13,7 @@
                 <a class="nav-link" href="index.php">Home</a>
                 <a class="nav-link" href="manual_attendance.php">Absen Manual</a>
                 <a class="nav-link" href="scan.php">Scanner</a>
+                <a class="nav-link text-danger fw-bold" href="logout.php">Keluar</a>
             </div>
         </div>
     </nav>
