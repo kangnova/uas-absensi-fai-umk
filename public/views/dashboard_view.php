@@ -213,7 +213,7 @@
                     // Logic: User is Pengawas of Prodi OR User is a Substitute (Panitia) who took a schedule for that Prodi
                     // Since substitution_count is generic, we'll try to find if they have a schedule match for the Prodi
                     $pengawas_pai = array_filter($users, function($u) use ($schedules) {
-                        $is_official = (strpos($u['jabatan'], 'Pengawas') !== false && $u['prodi'] === 'PAI');
+                        $is_official = (strpos($u['jabatan'], 'Pengawas') !== false && strpos($u['prodi'], 'PAI') !== false);
                         $is_substitute = ($u['stats']['substitution_count'] > 0);
                         
                         if ($is_official) return true;
@@ -230,12 +230,12 @@
                     });
 
                     $pengawas_piaud = array_filter($users, function($u) use ($schedules) {
-                        $is_official = (strpos($u['jabatan'], 'Pengawas') !== false && $u['prodi'] === 'PIAUD');
+                        $is_official = (strpos($u['jabatan'], 'Pengawas') !== false && strpos($u['prodi'], 'PIAUD') !== false);
                         $is_substitute = ($u['stats']['substitution_count'] > 0);
                         
                         if ($is_official) return true;
                         
-                         // Check if substitute for PIAUD
+                        // Check if substitute for PIAUD
                         if ($is_substitute) {
                             foreach ($schedules as $s) {
                                 if ($s['prodi'] === 'PIAUD' && strpos($s['pengawas'], $u['nama']) !== false) {

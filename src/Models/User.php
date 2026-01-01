@@ -20,12 +20,14 @@ class User {
         
         // Handle jabatan if array (for checkboxes)
         $jabatan = is_array($data['jabatan']) ? implode(',', $data['jabatan']) : $data['jabatan'];
+        // Handle prodi if array
+        $prodi = is_array($data['prodi']) ? implode(',', $data['prodi']) : $data['prodi'];
 
         return $stmt->execute([
             'nama' => $data['nama'],
             'nip' => $data['nip'],
             'jabatan' => $jabatan,
-            'prodi' => $data['prodi'],
+            'prodi' => $prodi,
             'token' => $data['token']
         ]);
     }
@@ -57,12 +59,14 @@ class User {
         $stmt = $this->pdo->prepare("UPDATE users SET nama = :nama, jabatan = :jabatan, prodi = :prodi WHERE id = :id");
         // Jabatan array handling
         $jabatan = is_array($data['jabatan']) ? implode(',', $data['jabatan']) : $data['jabatan'];
+        // Prodi array handling
+        $prodi = is_array($data['prodi']) ? implode(',', $data['prodi']) : $data['prodi'];
         
         return $stmt->execute([
             'id' => $id,
             'nama' => $data['nama'],
             'jabatan' => $jabatan,
-            'prodi' => $data['prodi']
+            'prodi' => $prodi
         ]);
     }
 

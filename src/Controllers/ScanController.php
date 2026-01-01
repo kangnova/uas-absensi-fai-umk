@@ -51,13 +51,19 @@ class ScanController {
                 $status = 'Telat';
             }
 
-            $this->attendanceModel->create($user['id'], $status, $activeSchedule['id']);
-
-            return [
-                'status' => 'success',
-                'message' => 'Absensi berhasil mencatat kehadiran pada ' . $activeSchedule['session_name'],
-                'detail' => $user
-            ];
+            if ($this->attendanceModel->create($user['id'], $status, $activeSchedule['id'])) {
+                return [
+                    'status' => 'success',
+                    'message' => 'Absensi berhasil mencatat kehadiran pada ' . $activeSchedule['session_name'],
+                    'detail' => $user
+                ];
+            } else {
+                return [
+                    'status' => 'error',
+                    'message' => 'Gagal menyimpan data absensi ke database.',
+                    'detail' => $user
+                ];
+            }
 
         } catch (\Exception $e) {
             error_log($e->getMessage());

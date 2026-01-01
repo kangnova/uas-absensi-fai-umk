@@ -71,21 +71,22 @@ class DashboardController {
                 foreach ($schedules as $s) {
                     $is_assigned = (isset($s['pengawas']) && strpos($s['pengawas'], $user['nama']) !== false);
                     
-                    if ($is_panitia || $is_assigned) {
-                        // Check attendance
-                        $att_info = null;
-                        foreach ($all_attendance as $a) {
-                            if ($a['user_id'] == $user['id'] && $a['schedule_id'] == $s['id']) {
-                                $att_info = $a;
-                                break;
-                            }
+                    // Check attendance first
+                    $att_info = null;
+                    foreach ($all_attendance as $a) {
+                        if ($a['user_id'] == $user['id'] && $a['schedule_id'] == $s['id']) {
+                            $att_info = $a;
+                            break;
                         }
+                    }
+
+                    if ($is_panitia || $is_assigned || $att_info) {
                         
                         $report_data[] = [
                             'date' => $s['date'],
                             'session' => $s['session_name'],
                             'mk' => $s['mata_kuliah'],
-                            'role' => $is_assigned ? 'Pengawas/Bertugas' : 'Panitia',
+                            'role' => $is_assigned ? 'Pengawas/Bertugas' : ($att_info ? 'Pengganti/Hadir' : 'Panitia'),
                             'status' => $att_info ? 'Hadir' : 'Tidak Hadir',
                             'time_in' => $att_info ? date('H:i:s', strtotime($att_info['timestamp_in'])) : '-'
                         ];
@@ -115,20 +116,22 @@ class DashboardController {
                     foreach ($schedules as $s) {
                         $is_assigned = (isset($s['pengawas']) && strpos($s['pengawas'], $user['nama']) !== false);
 
-                        if ($is_panitia || $is_assigned) {
-                            $att_info = null;
-                            foreach ($all_attendance as $a) {
-                                if ($a['user_id'] == $user['id'] && $a['schedule_id'] == $s['id']) {
-                                    $att_info = $a;
-                                    break;
-                                }
+                        // Check attendance first
+                        $att_info = null;
+                        foreach ($all_attendance as $a) {
+                            if ($a['user_id'] == $user['id'] && $a['schedule_id'] == $s['id']) {
+                                $att_info = $a;
+                                break;
                             }
+                        }
 
+                        // Show if: Panitia OR Assigned OR Attended (Substitute)
+                        if ($is_panitia || $is_assigned || $att_info) {
                             $report_data[] = [
                                 'date' => $s['date'],
                                 'session' => $s['session_name'],
                                 'mk' => $s['mata_kuliah'],
-                                'role' => $is_assigned ? 'Pengawas/Bertugas' : 'Panitia',
+                                'role' => $is_assigned ? 'Pengawas/Bertugas' : ($att_info ? 'Pengganti/Hadir' : 'Panitia'),
                                 'status' => $att_info ? 'Hadir' : 'Tidak Hadir',
                                 'time_in' => $att_info ? date('H:i:s', strtotime($att_info['timestamp_in'])) : '-'
                             ];
@@ -173,11 +176,16 @@ class DashboardController {
                         $new_roles = explode(',', $jabatan);
                         $merged_roles = array_unique(array_merge($current_roles, array_map('trim', $new_roles)));
                         
+                        // Merge Prodi
+                        $current_prodis = isset($existing['prodi']) ? explode(',', $existing['prodi']) : [];
+                        $new_prodis = explode(',', $prodi);
+                        $merged_prodis = array_unique(array_merge($current_prodis, array_map('trim', $new_prodis)));
+
                         // Update
                         $this->userModel->update($existing['id'], [
                             'nama' => $nama, // Update name just in case
                             'jabatan' => $merged_roles, // Array
-                            'prodi' => $prodi // Update prodi
+                            'prodi' => $merged_prodis // Array
                         ]);
                     } else {
                         // Create
@@ -247,12 +255,18 @@ class DashboardController {
                     $current_roles = explode(',', $existing['jabatan']);
                     $merged_roles = array_unique(array_merge($current_roles, $jabatan));
                     
+                    // Merge Prodi explicitly for manual add if user selects different prodi
+                    // Note: Manual add usually comes with a single prodi selection, but we can treat it as adding permission
+                    $new_prodi = $_POST['prodi']; // Assuming string based on UI
+                    $current_prodis = isset($existing['prodi']) ? explode(',', $existing['prodi']) : [];
+                    $merged_prodis = array_unique(array_merge($current_prodis, (array)$new_prodi));
+
                     $this->userModel->update($existing['id'], [
                         'nama' => $_POST['nama'],
                         'jabatan' => $merged_roles,
-                        'prodi' => $_POST['prodi']
+                        'prodi' => $merged_prodis
                     ]);
-                    $success_msg = "User dengan NIP $nip sudah ada. Data diperbarui (Jabatan digabung).";
+                    $success_msg = "User dengan NIP $nip sudah ada. Data diperbarui (Jabatan & Prodi digabung).";
                 } else {
                     $this->userModel->create([
                         'nama' => $_POST['nama'],

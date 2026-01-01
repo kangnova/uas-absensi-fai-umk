@@ -125,7 +125,7 @@ foreach ($users as $u) {
                                     <option value="">-- Cari Nama --</option>
                                     <?php foreach ($users as $u): ?>
                                         <option value="<?= $u['id'] ?>">
-                                            <?= htmlspecialchars($u['nama']) ?> - <?= htmlspecialchars($u['jabatan']) ?>
+                                            <?= htmlspecialchars($u['nama']) ?> - <?= htmlspecialchars($u['jabatan']) ?> (<?= htmlspecialchars($u['prodi'] ?? '-') ?>)
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
