@@ -87,6 +87,55 @@ class DashboardController {
                 require __DIR__ . '/../../public/views/report_view.php';
                 exit;
             }
+
+            // Handle Report All
+            if ($_GET['action'] === 'report_all') {
+                $users = $this->userModel->getAll();
+                $schedules = $this->scheduleModel->getAll();
+                $all_attendance = $this->attendanceModel->getAll();
+
+                $all_reports = [];
+
+                foreach ($users as $user) {
+                    // Calculate Stats
+                    $this->calculateUserStats($user, $schedules, $all_attendance);
+
+                    // Prepare Detailed Report Data
+                    $report_data = [];
+                    $is_panitia = strpos($user['jabatan'], 'Panitia') !== false;
+
+                    foreach ($schedules as $s) {
+                        $is_assigned = (isset($s['pengawas']) && strpos($s['pengawas'], $user['nama']) !== false);
+
+                        if ($is_panitia || $is_assigned) {
+                            $att_info = null;
+                            foreach ($all_attendance as $a) {
+                                if ($a['user_id'] == $user['id'] && $a['schedule_id'] == $s['id']) {
+                                    $att_info = $a;
+                                    break;
+                                }
+                            }
+
+                            $report_data[] = [
+                                'date' => $s['date'],
+                                'session' => $s['session_name'],
+                                'mk' => $s['mata_kuliah'],
+                                'role' => $is_assigned ? 'Pengawas/Bertugas' : 'Panitia',
+                                'status' => $att_info ? 'Hadir' : 'Tidak Hadir',
+                                'time_in' => $att_info ? date('H:i:s', strtotime($att_info['timestamp_in'])) : '-'
+                            ];
+                        }
+                    }
+                    
+                    $all_reports[] = [
+                        'user' => $user,
+                        'data' => $report_data
+                    ];
+                }
+
+                require __DIR__ . '/../../public/views/report_all_view.php';
+                exit;
+            }
         }
 
         // Handle Import Users

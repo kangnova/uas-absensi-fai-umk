@@ -381,7 +381,10 @@
                         </div>
 
                         <div class="card">
-                            <div class="card-header">Data Semua Peserta & Statistik Individu</div>
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span>Data Semua Peserta & Statistik Individu</span>
+                                <a href="?action=report_all" class="btn btn-sm btn-dark">🖨️ Cetak Semua Laporan</a>
+                            </div>
                             <div class="card-body">
                                 <table class="table table-bordered table-sm table-striped">
                                     <thead>
