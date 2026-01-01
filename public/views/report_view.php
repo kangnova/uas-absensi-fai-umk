@@ -8,7 +8,7 @@
         body { font-size: 14px; }
         @media print {
             .no-print { display: none !important; }
-            .card { border: none !important; shadow: none !important; }
+            .card { border: none !important; box-shadow: none !important; }
         }
     </style>
 </head>
