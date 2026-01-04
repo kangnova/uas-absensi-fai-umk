@@ -44,8 +44,8 @@ class DashboardController {
                 header('Content-Type: text/csv');
                 header('Content-Disposition: attachment; filename="template_jadwal.csv"');
                 $output = fopen('php://output', 'w');
-                fputcsv($output, ['Tanggal (YYYY-MM-DD)', 'Sesi', 'Prodi', 'Mata Kuliah', 'Mulai (HH:MM)', 'Selesai (HH:MM)', 'Pengawas (Pisahkan koma)']);
-                fputcsv($output, ['2025-01-20', 'Sesi 1', 'PAI', 'Filsafat', '08:00', '10:00', 'Budi Santoso, Siti Aminah']);
+                fputcsv($output, ['Tanggal (YYYY-MM-DD)', 'Sesi', 'Prodi', 'Semester', 'Mata Kuliah', 'Mulai (HH:MM)', 'Selesai (HH:MM)', 'Pengawas (Pisahkan koma)']);
+                fputcsv($output, ['2025-01-20', 'Sesi 1', 'PAI', 'I', 'Filsafat', '08:00', '10:00', 'Budi Santoso, Siti Aminah']);
                 fclose($output);
                 exit;
             }
@@ -86,7 +86,7 @@ class DashboardController {
                             'date' => $s['date'],
                             'session' => $s['session_name'],
                             'mk' => $s['mata_kuliah'],
-                            'role' => $is_assigned ? 'Pengawas/Bertugas' : ($att_info ? 'Pengganti/Hadir' : 'Panitia'),
+                            'role' => $is_assigned ? 'Pengawas/Bertugas' : (($is_panitia && $att_info) ? 'Panitia/Hadir' : ($att_info ? 'Pengganti/Hadir' : 'Panitia')),
                             'status' => $att_info ? 'Hadir' : 'Tidak Hadir',
                             'time_in' => $att_info ? date('H:i:s', strtotime($att_info['timestamp_in'])) : '-'
                         ];
@@ -131,7 +131,7 @@ class DashboardController {
                                 'date' => $s['date'],
                                 'session' => $s['session_name'],
                                 'mk' => $s['mata_kuliah'],
-                                'role' => $is_assigned ? 'Pengawas/Bertugas' : ($att_info ? 'Pengganti/Hadir' : 'Panitia'),
+                                'role' => $is_assigned ? 'Pengawas/Bertugas' : (($is_panitia && $att_info) ? 'Panitia/Hadir' : ($att_info ? 'Pengganti/Hadir' : 'Panitia')),
                                 'status' => $att_info ? 'Hadir' : 'Tidak Hadir',
                                 'time_in' => $att_info ? date('H:i:s', strtotime($att_info['timestamp_in'])) : '-'
                             ];
@@ -219,15 +219,16 @@ class DashboardController {
                 fgetcsv($file, 0, $delimiter); // Skip header
                 $count = 0;
                 while (($row = fgetcsv($file, 0, $delimiter)) !== false) {
-                    if (count($row) < 7) continue;
+                    if (count($row) < 8) continue; // Update check for new column count (8)
                     $this->scheduleModel->create([
                         'date' => $row[0],
                         'session' => $row[1],
                         'prodi' => $row[2],
-                        'mata_kuliah' => $row[3],
-                        'start' => $row[4],
-                        'end' => $row[5],
-                        'pengawas' => $row[6] // String from CSV
+                        'semester' => $row[3],
+                        'mata_kuliah' => $row[4],
+                        'start' => $row[5],
+                        'end' => $row[6],
+                        'pengawas' => $row[7] // String from CSV
                     ]);
                     $count++;
                 }
@@ -291,6 +292,7 @@ class DashboardController {
                 $this->scheduleModel->create([
                     'date' => $_POST['date'],
                     'prodi' => $_POST['prodi'],
+                    'semester' => $_POST['semester'] ?? '',
                     'session' => $_POST['session'],
                     'mata_kuliah' => $_POST['mata_kuliah'],
                     'start' => $_POST['start'],
@@ -310,6 +312,7 @@ class DashboardController {
                 $this->scheduleModel->update($_POST['schedule_id'], [
                     'date' => $_POST['date'],
                     'prodi' => $_POST['prodi'],
+                    'semester' => $_POST['semester'] ?? '',
                     'session' => $_POST['session'],
                     'mata_kuliah' => $_POST['mata_kuliah'],
                     'start' => $_POST['start'],

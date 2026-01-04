@@ -11,6 +11,7 @@
             <a class="navbar-brand" href="#">Absensi UAS FAI</a>
             <div class="navbar-nav ms-auto">
                 <a class="nav-link" href="index.php">Home</a>
+                <a class="nav-link" href="jadwal.php">Jadwal UAS</a>
                 <a class="nav-link" href="manual_attendance.php">Absen Manual</a>
                 <a class="nav-link" href="scan.php">Scanner</a>
                 <a class="nav-link text-danger fw-bold" href="logout.php">Keluar</a>
@@ -43,6 +44,7 @@
                         $e_date = $is_edit ? $edit_schedule['date'] : '';
                         $e_session = $is_edit ? $edit_schedule['session_name'] : '';
                         $e_prodi = $is_edit ? $edit_schedule['prodi'] : '';
+                        $e_semester = $is_edit ? ($edit_schedule['semester'] ?? '') : '';
                         $e_mk = $is_edit ? $edit_schedule['mata_kuliah'] : '';
                         $e_start = $is_edit ? $edit_schedule['start_time'] : '';
                         $e_end = $is_edit ? $edit_schedule['end_time'] : '';
@@ -69,6 +71,10 @@
                                         <option value="PAI" <?= $e_prodi == 'PAI' ? 'selected' : '' ?>>PAI</option>
                                         <option value="PIAUD" <?= $e_prodi == 'PIAUD' ? 'selected' : '' ?>>PIAUD</option>
                                     </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="small">Semester</label>
+                                    <input type="text" name="semester" class="form-control form-control-sm" placeholder="I, III, etc" value="<?= $e_semester ?>">
                                 </div>
                                 <div class="col-12">
                                     <label class="small">Mata Kuliah</label>
@@ -103,7 +109,7 @@
                             <?php foreach ($schedules as $s): ?>
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     <div>
-                                        <strong><?= date('d M', strtotime($s['date'])) ?></strong> - <span class="badge bg-info text-dark"><?= htmlspecialchars($s['prodi'] ?? '-') ?></span> <?= htmlspecialchars($s['session_name']) ?><br>
+                                        <strong><?= date('d M', strtotime($s['date'])) ?></strong> - <span class="badge bg-info text-dark"><?= htmlspecialchars($s['prodi'] ?? '-') ?></span> - <span class="badge bg-secondary"><?= htmlspecialchars($s['semester'] ?? '-') ?></span> <?= htmlspecialchars($s['session_name']) ?><br>
                                         <span class="text-muted"><?= date('H:i', strtotime($s['start_time'])) ?> - <?= date('H:i', strtotime($s['end_time'])) ?></span><br>
                                         <em>MK: <?= htmlspecialchars($s['mata_kuliah'] ?? '-') ?></em><br>
                                         <small>Pengawas: <?= htmlspecialchars($s['pengawas'] ?? '-') ?></small>

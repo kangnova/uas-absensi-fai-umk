@@ -22,14 +22,16 @@ class Schedule {
     }
 
     public function create($data) {
-        $stmt = $this->pdo->prepare("INSERT INTO exam_schedules (date, prodi, session_name, mata_kuliah, start_time, end_time, pengawas) VALUES (:date, :prodi, :session, :mk, :start, :end, :pengawas)");
+        $stmt = $this->pdo->prepare("INSERT INTO exam_schedules (date, prodi, semester, session_name, mata_kuliah, start_time, end_time, pengawas) VALUES (:date, :prodi, :semester, :session, :mk, :start, :end, :pengawas)");
         
         // Pengawas is array, implode it
         $pengawas = is_array($data['pengawas']) ? implode(', ', $data['pengawas']) : $data['pengawas'];
+        $semester = isset($data['semester']) ? $data['semester'] : '';
 
         return $stmt->execute([
             'date' => $data['date'],
             'prodi' => $data['prodi'],
+            'semester' => $semester,
             'session' => $data['session'],
             'mk' => $data['mata_kuliah'],
             'start' => $data['start'],
@@ -45,14 +47,16 @@ class Schedule {
     }
 
     public function update($id, $data) {
-        $stmt = $this->pdo->prepare("UPDATE exam_schedules SET date = :date, prodi = :prodi, session_name = :session, mata_kuliah = :mk, start_time = :start, end_time = :end, pengawas = :pengawas WHERE id = :id");
+        $stmt = $this->pdo->prepare("UPDATE exam_schedules SET date = :date, prodi = :prodi, semester = :semester, session_name = :session, mata_kuliah = :mk, start_time = :start, end_time = :end, pengawas = :pengawas WHERE id = :id");
         
         $pengawas = is_array($data['pengawas']) ? implode(', ', $data['pengawas']) : $data['pengawas'];
+        $semester = isset($data['semester']) ? $data['semester'] : '';
 
         return $stmt->execute([
             'id' => $id,
             'date' => $data['date'],
             'prodi' => $data['prodi'],
+            'semester' => $semester,
             'session' => $data['session'],
             'mk' => $data['mata_kuliah'],
             'start' => $data['start'],
