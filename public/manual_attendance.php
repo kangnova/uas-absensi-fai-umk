@@ -24,27 +24,62 @@ $msg_type = '';
 // Handle Manual ABSEN CLICK
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'])) {
     
-    // Check security if session enabled (will do later)
+    $user_id = $_POST['user_id'];
+    $schedule_id = !empty($_POST['schedule_id']) ? $_POST['schedule_id'] : null;
 
-    $user = $userModel->getById($_POST['user_id']);
+    $user = $userModel->getById($user_id);
+
     if ($user) {
-        $result = $scanController->process($user['qr_token']);
-        
-        if ($result['status'] === 'success') {
-            $message = "Sukses: " . $result['message'];
-            $msg_type = 'success';
-        } elseif ($result['status'] === 'warning') {
-            $message = "Peringatan: " . $result['message'];
-            $msg_type = 'warning';
+        if ($schedule_id) {
+            // Retroactive / Specific Schedule Attendance
+            require_once __DIR__ . '/../src/Models/Attendance.php';
+            $attendanceModel = new \App\Models\Attendance($pdo);
+            
+            // Check existing
+            $existing = $attendanceModel->checkSchedule($user_id, $schedule_id);
+            $sch_info = $scheduleModel->getById($schedule_id);
+            $session_name = $sch_info ? $sch_info['session_name'] : 'Sesi Terpilih';
+
+            if ($existing) {
+                 $message = "User sudah absen pada jadwal ini (" . $session_name . ").";
+                 $msg_type = 'warning';
+            } else {
+                 if ($attendanceModel->create($user_id, 'Hadir', $schedule_id)) {
+                      $message = "Sukses: Kehadiran manual dicatat untuk " . htmlspecialchars($user['nama']) . " pada " . $session_name;
+                      $msg_type = 'success';
+                 } else {
+                      $message = "Gagal mencatat kehadiran.";
+                      $msg_type = 'danger';
+                 }
+            }
+
         } else {
-            $message = "Error: " . $result['message'];
-            $msg_type = 'danger';
+            // Default: Scan Token Logic (Current Active Schedule)
+            $result = $scanController->process($user['qr_token']);
+            
+            if ($result['status'] === 'success') {
+                $message = "Sukses: " . $result['message'];
+                $msg_type = 'success';
+            } elseif ($result['status'] === 'warning') {
+                $message = "Peringatan: " . $result['message'];
+                $msg_type = 'warning';
+            } else {
+                $message = "Error: " . $result['message'];
+                $msg_type = 'danger';
+            }
         }
     } else {
         $message = "User tidak ditemukan.";
         $msg_type = 'danger';
     }
 }
+
+// Fetch all schedules for dropdown
+$all_schedules_list = $scheduleModel->getAll();
+// Sort by date DESC
+usort($all_schedules_list, function($a, $b) {
+    return strtotime($b['date']) - strtotime($a['date']);
+});
 
 // QUICK ABSEN LOGIC
 $filter_date = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
@@ -119,6 +154,19 @@ foreach ($users as $u) {
                     </div>
                     <div class="card-body p-4">
                         <form method="POST">
+                            <div class="mb-3">
+                                <label class="form-label">Pilih Jadwal / Sesi (Opsional)</label>
+                                <select class="form-select select2" name="schedule_id">
+                                    <option value="">-- Otomatis (Sesuai Jam Sekarang) --</option>
+                                    <?php foreach ($all_schedules_list as $sl): ?>
+                                        <option value="<?= $sl['id'] ?>">
+                                            <?= date('d M Y', strtotime($sl['date'])) ?> - <?= htmlspecialchars($sl['session_name']) ?> - <?= htmlspecialchars($sl['mata_kuliah']) ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <small class="text-muted d-block mt-1">Pilih ini jika input <strong>susulan</strong> (lewat jam).</small>
+                            </div>
+
                             <div class="mb-3">
                                 <label class="form-label">Cari User Apapun</label>
                                 <select class="form-select select2" name="user_id" required>

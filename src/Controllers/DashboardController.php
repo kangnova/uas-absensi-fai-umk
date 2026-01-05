@@ -60,38 +60,9 @@ class DashboardController {
                 // Calculate Stats
                 $this->calculateUserStats($user, $schedules, $all_attendance);
 
-                // Prepare Detailed Report Data
-                $report_data = [];
-                // Sort schedules by date
-                
-                // For Panitia: Show ALL schedules
-                // For Pengawas: Show ASSIGNED schedules
-                $is_panitia = strpos($user['jabatan'], 'Panitia') !== false;
-                
-                foreach ($schedules as $s) {
-                    $is_assigned = (isset($s['pengawas']) && strpos($s['pengawas'], $user['nama']) !== false);
-                    
-                    // Check attendance first
-                    $att_info = null;
-                    foreach ($all_attendance as $a) {
-                        if ($a['user_id'] == $user['id'] && $a['schedule_id'] == $s['id']) {
-                            $att_info = $a;
-                            break;
-                        }
-                    }
-
-                    if ($is_panitia || $is_assigned || $att_info) {
-                        
-                        $report_data[] = [
-                            'date' => $s['date'],
-                            'session' => $s['session_name'],
-                            'mk' => $s['mata_kuliah'],
-                            'role' => $is_assigned ? 'Pengawas/Bertugas' : (($is_panitia && $att_info) ? 'Panitia/Hadir' : ($att_info ? 'Pengganti/Hadir' : 'Panitia')),
-                            'status' => $att_info ? 'Hadir' : 'Tidak Hadir',
-                            'time_in' => $att_info ? date('H:i:s', strtotime($att_info['timestamp_in'])) : '-'
-                        ];
-                    }
-                }
+                // Prepare Matrix Data
+                $matrix_headers = $this->getMatrixHeaders($schedules);
+                $matrix_row = $this->getMatrixRow($user, $matrix_headers, $schedules, $all_attendance);
 
                 require __DIR__ . '/../../public/views/report_view.php';
                 exit;
@@ -103,44 +74,30 @@ class DashboardController {
                 $schedules = $this->scheduleModel->getAll();
                 $all_attendance = $this->attendanceModel->getAll();
 
+                // Sort users by Name (optional but good for report)
+                usort($users, function($a, $b) {
+                    return strcmp($a['nama'], $b['nama']);
+                });
+
+                $matrix_headers = $this->getMatrixHeaders($schedules);
                 $all_reports = [];
 
                 foreach ($users as $user) {
                     // Calculate Stats
                     $this->calculateUserStats($user, $schedules, $all_attendance);
-
-                    // Prepare Detailed Report Data
-                    $report_data = [];
-                    $is_panitia = strpos($user['jabatan'], 'Panitia') !== false;
-
-                    foreach ($schedules as $s) {
-                        $is_assigned = (isset($s['pengawas']) && strpos($s['pengawas'], $user['nama']) !== false);
-
-                        // Check attendance first
-                        $att_info = null;
-                        foreach ($all_attendance as $a) {
-                            if ($a['user_id'] == $user['id'] && $a['schedule_id'] == $s['id']) {
-                                $att_info = $a;
-                                break;
-                            }
-                        }
-
-                        // Show if: Panitia OR Assigned OR Attended (Substitute)
-                        if ($is_panitia || $is_assigned || $att_info) {
-                            $report_data[] = [
-                                'date' => $s['date'],
-                                'session' => $s['session_name'],
-                                'mk' => $s['mata_kuliah'],
-                                'role' => $is_assigned ? 'Pengawas/Bertugas' : (($is_panitia && $att_info) ? 'Panitia/Hadir' : ($att_info ? 'Pengganti/Hadir' : 'Panitia')),
-                                'status' => $att_info ? 'Hadir' : 'Tidak Hadir',
-                                'time_in' => $att_info ? date('H:i:s', strtotime($att_info['timestamp_in'])) : '-'
-                            ];
-                        }
-                    }
                     
+                    // Skip users with 0 target assignments/attendance if desired? 
+                    // No, usually report all lists everyone or at least active ones.
+                    // Only listing those with assignments might be cleaner, but let's list all for now as per "ALL".
+
+                    $matrix_result = $this->getMatrixRow($user, $matrix_headers, $schedules, $all_attendance);
+                    $matrix_row = $matrix_result['row'];
+                    $user_stats = $matrix_result['stats'];
+
                     $all_reports[] = [
                         'user' => $user,
-                        'data' => $report_data
+                        'matrix_row' => $matrix_row,
+                        'stats' => $user_stats
                     ];
                 }
 
@@ -437,5 +394,159 @@ class DashboardController {
                 $global_stats['pengawas_hadir'] += $u['stats']['hadir'];
             }
         }
+    }
+
+    private function getMatrixHeaders($schedules) {
+        $headers = [];
+        // Group by Date -> Session
+        // Sort schedules by date and session
+        usort($schedules, function($a, $b) {
+            $dateA = $a['date'] ?? '';
+            $dateB = $b['date'] ?? '';
+            $dateCmp = strcmp($dateA, $dateB);
+            if ($dateCmp !== 0) return $dateCmp;
+            
+            // Extract number from session if possible for better sort (e.g. Sesi 1, Sesi 2)
+            $sessionA = $a['session_name'] ?? '';
+            $sessionB = $b['session_name'] ?? '';
+            return strcmp($sessionA, $sessionB);
+        });
+
+        foreach ($schedules as $s) {
+            $date = $s['date'];
+            // Normalize session name to prevent duplicate columns for same logical session
+            // Assuming session name is consistent, e.g. "Sesi 1"
+            $session = $s['session_name']; 
+
+            if (!isset($headers[$date])) {
+                $headers[$date] = [];
+            }
+            if (!in_array($session, $headers[$date])) {
+                $headers[$date][] = $session;
+            }
+        }
+        return $headers;
+    }
+
+    private function getMatrixRow($user, $headers, $schedules, $all_attendance) {
+        $row = [];
+        // Initialize row with empty values for each expected column
+        foreach ($headers as $date => $sessions) {
+            foreach ($sessions as $session) {
+                $row[$date][$session] = ''; 
+            }
+        }
+
+        $is_panitia = strpos($user['jabatan'] ?? '', 'Panitia') !== false;
+
+        foreach ($schedules as $s) {
+            $session_key = $s['session_name'];
+            $date_key = $s['date'];
+            
+            // Skip if this schedule's session/date somehow isn't in headers (shouldn't happen)
+            if (!isset($headers[$date_key]) || !in_array($session_key, $headers[$date_key])) continue;
+
+            $is_assigned = (isset($s['pengawas']) && strpos($s['pengawas'], $user['nama']) !== false);
+            
+            // Check attendance
+            $att_info = null;
+            foreach ($all_attendance as $a) {
+                // Priority 1: Strict Schedule ID Match
+                if ($a['user_id'] == $user['id'] && $a['schedule_id'] == $s['id']) {
+                    $att_info = $a;
+                    break;
+                }
+                
+                // Priority 2: Legacy Fallback (Match by Date & Time Window) - ONLY if schedule_id is NULL
+                // This handles old real-time scans before schedule_id was recorded
+                if ($a['user_id'] == $user['id'] && empty($a['schedule_id'])) {
+                    $att_date = date('Y-m-d', strtotime($a['timestamp_in']));
+                    $att_time = date('H:i:s', strtotime($a['timestamp_in']));
+                    
+                    if ($att_date == $s['date'] && $att_time >= $s['start_time'] && $att_time <= $s['end_time']) {
+                        $att_info = $a;
+                        break;
+                    }
+                }
+            }
+
+            // Determine Content
+            $cell_content = '';
+
+            if ($att_info) {
+                $time_str = date('H:i', strtotime($att_info['timestamp_in']));
+                
+                // PRESENT
+                if ($is_assigned) {
+                    $cell_content = 'Pengawas/Hadir - ' . $time_str;
+                } elseif ($is_panitia) {
+                    $cell_content = 'Panitia/Hadir - ' . $time_str;
+                } else {
+                    $cell_content = 'Pengganti/Hadir - ' . $time_str;
+                }
+            } else {
+                // ABSENT / NOT PRESENT (But Assigned)
+                if ($is_assigned) {
+                     // Leave empty or indicate absence? 
+                     //$cell_content = 'Pengawas/Alfa'; 
+                }
+            }
+
+            if ($cell_content != '') {
+                $row[$date_key][$session_key] = $cell_content;
+            }
+
+        }
+        
+        // --- STATISTICS CALCULATION ---
+        $stats = [
+            'wajib' => 0,
+            'hadir' => 0,
+            'alfa' => 0
+        ];
+
+        foreach ($schedules as $s) {
+            $session_key = $s['session_name'];
+            $date_key = $s['date'];
+            
+            // Check if this user was assigned
+            $is_assigned_schedule = (isset($s['pengawas']) && strpos($s['pengawas'], $user['nama']) !== false);
+            
+            // Panitia is considered "Wajib" for ALL sessions if they are marked as Panitia
+            // OR we stick to the View logic: If Panitia, we expect them everywhere?
+            // Let's refine: Wajib = Assigned OR Panitia
+            $is_wajib = $is_assigned_schedule || $is_panitia;
+
+            // Check if they were present
+             $att_info = null;
+            foreach ($all_attendance as $a) {
+                if ($a['user_id'] == $user['id'] && $a['schedule_id'] == $s['id']) {
+                    $att_info = $a; break;
+                }
+                if ($a['user_id'] == $user['id'] && empty($a['schedule_id'])) {
+                    $att_date = date('Y-m-d', strtotime($a['timestamp_in']));
+                    $att_time = date('H:i:s', strtotime($a['timestamp_in']));
+                    if ($att_date == $s['date'] && $att_time >= $s['start_time'] && $att_time <= $s['end_time']) {
+                         $att_info = $a; break;
+                    }
+                }
+            }
+            $is_present = ($att_info !== null);
+
+            if ($is_wajib) {
+                $stats['wajib']++;
+                // If present, it counts to hadir.
+                // If absent, we don't increment alfa here anymore.
+            }
+
+            if ($is_present) {
+                $stats['hadir']++;
+            }
+        }
+
+        // Calculate Alfa based on Wajib - Hadir
+        $stats['alfa'] = max(0, $stats['wajib'] - $stats['hadir']);
+        
+        return ['row' => $row, 'stats' => $stats];
     }
 }

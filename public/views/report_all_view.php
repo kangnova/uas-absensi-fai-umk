@@ -22,88 +22,81 @@
             <a href="dashboard.php" class="btn btn-secondary">Kembali</a>
         </div>
 
-        <?php foreach ($all_reports as $index => $rep): ?>
-            <?php 
-                $user = $rep['user'];
-                $report_data = $rep['data'];
-            ?>
-            
-            <div class="card shadow-sm mb-5 <?= $index > 0 ? 'page-break' : '' ?>">
-                <div class="card-body p-5">
-                    
-                    <!-- HEADER -->
-                    <div class="text-center mb-5">
-                        <h3 class="fw-bold">LAPORAN KEHADIRAN UJIAN</h3>
-                        <h5 class="text-muted">FAKULTAS AGAMA ISLAM - UMK</h5>
-                    </div>
+        <div class="card shadow-sm mb-5">
+            <div class="card-body p-3">
+                <!-- HEADER -->
+                <div class="text-center mb-4">
+                    <h3 class="fw-bold">REKAPITULASI KEHADIRAN UJIAN</h3>
+                    <h5 class="text-muted">FAKULTAS AGAMA ISLAM - UMK</h5>
+                </div>
 
-                    <!-- USER INFO -->
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <table class="table table-borderless table-sm">
-                                <tr><td style="width: 120px;">Nama</td><td>: <strong><?= htmlspecialchars($user['nama']) ?></strong></td></tr>
-                                <tr><td>NIP/NIDN</td><td>: <?= htmlspecialchars($user['nip_nidn']) ?></td></tr>
-                                <tr><td>Jabatan</td><td>: <?= htmlspecialchars($user['jabatan']) ?></td></tr>
-                                <tr><td>Prodi</td><td>: <?= htmlspecialchars($user['prodi']) ?></td></tr>
-                            </table>
-                        </div>
-                        <div class="col-md-6 text-end">
-                            <div class="card bg-light d-inline-block p-3">
-                                <h6 class="mb-1 text-muted">Statistik Kehadiran</h6>
-                                <h2 class="mb-0 fw-bold <?= $user['stats']['hadir'] < $user['stats']['target'] ? 'text-danger' : 'text-success' ?>">
-                                    <?= $user['stats']['hadir'] ?> / <?= $user['stats']['target'] ?>
-                                </h2>
-                                <small>Sesi Hadir / Total Wajib</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- TABLE -->
-                    <h6 class="fw-bold border-bottom pb-2 mb-3">Detail Jadwal & Kehadiran</h6>
-                    <table class="table table-bordered table-striped">
-                        <thead class="table-dark">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover table-sm">
+                        <thead class="table-light text-center align-middle">
+                            <!-- Helper to calculate total columns -->
+                            <?php 
+                            $dates = array_keys($matrix_headers);
+                            ?>
                             <tr>
-                                <th>Tanggal</th>
-                                <th>Sesi</th>
-                                <th>Mata Kuliah</th>
-                                <th>Peran</th>
-                                <th>Status</th>
-                                <th>Jam Masuk</th>
+                                <th rowspan="2" style="width: 50px;">No.</th>
+                                <th rowspan="2" style="min-width: 200px;">Nama</th>
+                                <th colspan="3" class="bg-warning text-dark">Statistik</th>
+                                <?php foreach ($matrix_headers as $date => $sessions): ?>
+                                    <th colspan="<?= count($sessions) ?>"><?= date('d F Y', strtotime($date)) ?></th>
+                                <?php endforeach; ?>
+                            </tr>
+                            <tr>
+                                <th class="bg-light text-center small">Wajib</th>
+                                <th class="bg-success text-white text-center small">Hadir</th>
+                                <th class="bg-danger text-white text-center small">Absen</th>
+                                <?php foreach ($matrix_headers as $sessions): ?>
+                                    <?php foreach ($sessions as $session): ?>
+                                        <th><?= htmlspecialchars($session) ?></th>
+                                    <?php endforeach; ?>
+                                <?php endforeach; ?>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if (empty($report_data)): ?>
-                                <tr><td colspan="6" class="text-center text-muted">Tidak ada jadwal yang ditugaskan.</td></tr>
+                            <?php if (empty($all_reports)): ?>
+                                <tr><td colspan="100%" class="text-center text-muted">Tidak ada data user.</td></tr>
                             <?php else: ?>
-                                <?php foreach ($report_data as $row): ?>
-                                <tr>
-                                    <td><?= date('d M Y', strtotime($row['date'])) ?></td>
-                                    <td><?= htmlspecialchars($row['session']) ?></td>
-                                    <td><?= htmlspecialchars($row['mk']) ?></td>
-                                    <td><?= htmlspecialchars($row['role']) ?></td>
-                                    <td>
-                                        <?php if ($row['status'] === 'Hadir'): ?>
-                                            <span class="badge bg-success">Hadir</span>
-                                        <?php else: ?>
-                                            <span class="badge bg-danger">Tidak Hadir</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td><?= $row['time_in'] ?></td>
-                                </tr>
+                                <?php $no = 1; ?>
+                                <?php foreach ($all_reports as $rep): ?>
+                                    <?php 
+                                        $user = $rep['user'];
+                                        $row = $rep['matrix_row'];
+                                        $stats = $rep['stats'] ?? ['wajib'=>0, 'hadir'=>0, 'alfa'=>0];
+                                    ?>
+                                    <tr>
+                                        <td class="text-center"><?= $no++ ?></td>
+                                        <td>
+                                            <strong><?= htmlspecialchars($user['nama'] ?? '') ?></strong><br>
+                                            <small class="text-muted"><?= htmlspecialchars($user['jabatan'] ?? '') ?></small>
+                                        </td>
+                                        <!-- Stats Columns -->
+                                        <td class="text-center fw-bold bg-light"><?= $stats['wajib'] ?></td>
+                                        <td class="text-center fw-bold text-success"><?= $stats['hadir'] ?></td>
+                                        <td class="text-center fw-bold text-danger"><?= $stats['alfa'] ?></td>
+
+                                        <?php foreach ($matrix_headers as $date => $sessions): ?>
+                                            <?php foreach ($sessions as $session): ?>
+                                                <td class="text-center">
+                                                    <?= isset($row[$date][$session]) ? htmlspecialchars($row[$date][$session]) : '' ?>
+                                                </td>
+                                            <?php endforeach; ?>
+                                        <?php endforeach; ?>
+                                    </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>
                         </tbody>
                     </table>
+                </div>
 
-                    <div class="mt-5 text-end">
-                        <p>Klaten, <?= date('d F Y') ?></p>
-                        <br><br><br>
-                        <p class="fw-bold">( Panitia Ujian )</p>
-                    </div>
-
+                <div class="mt-4 text-end no-print">
+                    <small class="text-muted">Dicetak pada: <?= date('d F Y H:i:s') ?></small>
                 </div>
             </div>
-        <?php endforeach; ?>
+        </div>
 
     </div>
 

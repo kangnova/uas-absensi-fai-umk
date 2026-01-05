@@ -57,6 +57,22 @@ class JadwalController {
             // Normalize Semester key
             // Expected: I, III, V, VII, VII Non Reg
             $sem = strtoupper(trim($s['semester'] ?? '')); 
+            
+            // Fix specific casing for Non Reg
+            $sem = str_replace(['NON REG', 'NON-REG'], 'NONREG', $sem);
+            
+            // Custom mapping for PAI
+            if ($prodi === 'PAI') {
+               if ($sem === 'VII CD') {
+                   $sem = 'VII D';
+               }
+               // Maybe map VII NONREG to VII C if that's what they mean?
+               // "modifikasi ... dari VII NONREG menjadi VII C"
+               if ($sem === 'VII NONREG') {
+                   $sem = 'VII C';
+               }
+            }
+
             // Handle if semester is empty, maybe put in 'Others'
             if (empty($sem)) $sem = 'Unknown';
             
@@ -64,7 +80,11 @@ class JadwalController {
         }
 
         // Columns to display
-        $semester_columns = ['I', 'III', 'V', 'VII', 'VII Non Reg'];
+        if ($prodi === 'PAI') {
+             $semester_columns = ['I', 'III', 'V', 'VII', 'VII C', 'VII D'];
+        } else {
+             $semester_columns = ['I', 'III', 'V', 'VII', 'VII NONREG'];
+        }
 
         require __DIR__ . '/../../public/views/jadwal_view.php';
     }

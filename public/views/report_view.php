@@ -52,41 +52,43 @@
                 </div>
 
                 <!-- TABLE -->
-                <h6 class="fw-bold border-bottom pb-2 mb-3">Detail Jadwal & Kehadiran</h6>
-                <table class="table table-bordered table-striped">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Tanggal</th>
-                            <th>Sesi</th>
-                            <th>Mata Kuliah</th>
-                            <th>Peran</th>
-                            <th>Status</th>
-                            <th>Jam Masuk</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($report_data)): ?>
-                            <tr><td colspan="6" class="text-center text-muted">Tidak ada jadwal yang ditugaskan.</td></tr>
-                        <?php else: ?>
-                            <?php foreach ($report_data as $row): ?>
+                <h6 class="fw-bold border-bottom pb-2 mb-3">Rekapitulasi Kehadiran</h6>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover table-sm">
+                        <thead class="table-light text-center align-middle">
+                            <?php 
+                            $dates = array_keys($matrix_headers);
+                            ?>
                             <tr>
-                                <td><?= date('d M Y', strtotime($row['date'])) ?></td>
-                                <td><?= htmlspecialchars($row['session']) ?></td>
-                                <td><?= htmlspecialchars($row['mk']) ?></td>
-                                <td><?= htmlspecialchars($row['role']) ?></td>
-                                <td>
-                                    <?php if ($row['status'] === 'Hadir'): ?>
-                                        <span class="badge bg-success">Hadir</span>
-                                    <?php else: ?>
-                                        <span class="badge bg-danger">Tidak Hadir</span>
-                                    <?php endif; ?>
-                                </td>
-                                <td><?= $row['time_in'] ?></td>
+                                <th rowspan="2" style="min-width: 200px;">Nama</th>
+                                <?php foreach ($matrix_headers as $date => $sessions): ?>
+                                    <th colspan="<?= count($sessions) ?>"><?= date('d F Y', strtotime($date)) ?></th>
+                                <?php endforeach; ?>
                             </tr>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+                            <tr>
+                                <?php foreach ($matrix_headers as $sessions): ?>
+                                    <?php foreach ($sessions as $session): ?>
+                                        <th><?= htmlspecialchars($session) ?></th>
+                                    <?php endforeach; ?>
+                                <?php endforeach; ?>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <strong><?= htmlspecialchars($user['nama'] ?? '') ?></strong>
+                                </td>
+                                <?php foreach ($matrix_headers as $date => $sessions): ?>
+                                    <?php foreach ($sessions as $session): ?>
+                                        <td class="text-center">
+                                            <?= isset($matrix_row[$date][$session]) ? htmlspecialchars($matrix_row[$date][$session]) : '' ?>
+                                        </td>
+                                    <?php endforeach; ?>
+                                <?php endforeach; ?>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
                 <div class="mt-5 text-end">
                     <p>Klaten, <?= date('d F Y') ?></p>
