@@ -60,5 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
+
+    <!-- CHATBOT WIDGET -->
+    <?php include __DIR__ . '/views/chatbot_widget.php'; ?>
 </body>
 </html>

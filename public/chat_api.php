@@ -4,12 +4,12 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/config.php';
 
 session_start();
-// Security: Optional, but good to have
-if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
-    http_response_code(403);
-    echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
-    exit;
-}
+// Security: Login check removed to allow chatbot on login page
+// if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+//     http_response_code(403);
+//     echo json_encode(['status' => 'error', 'message' => 'Unauthorized']);
+//     exit;
+// }
 
 use App\Controllers\ChatController;
 
