@@ -39,9 +39,8 @@ class JadwalController {
         
         foreach ($schedules as $s) {
             $date = $s['date'];
-            // Session key: assume combination of start_time and end_time, or session_name if consistent
-            // Using session_name + start_time to be safe
-            $sess_key = $s['session_name'] . '_' . $s['start_time']; 
+            // Session key: Group by session_name only to merge rows
+            $sess_key = $s['session_name']; 
             
             if (!isset($grouped[$date])) {
                 $grouped[$date] = [];

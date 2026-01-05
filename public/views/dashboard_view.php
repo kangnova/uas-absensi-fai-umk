@@ -82,14 +82,17 @@
                                 </div>
                                 <div class="col-12">
                                     <label class="small">Pengawas (Ganti jika berhalangan)</label>
-                                    <select name="pengawas[]" class="form-select form-select-sm" multiple style="height: 100px;">
+                                    <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto;">
                                         <?php foreach ($supervisors as $spv): ?>
-                                            <option value="<?= htmlspecialchars($spv['nama']) ?>" <?= in_array($spv['nama'], $e_pengawas) ? 'selected' : '' ?>>
-                                                <?= htmlspecialchars($spv['nama']) ?> (<?= htmlspecialchars($spv['jabatan']) ?> - <?= htmlspecialchars($spv['prodi'] ?? '-') ?>)
-                                            </option>
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="pengawas[]" value="<?= htmlspecialchars($spv['nama']) ?>" id="spv_<?= $spv['id'] ?>" <?= in_array($spv['nama'], $e_pengawas) ? 'checked' : '' ?>>
+                                                <label class="form-check-label small" for="spv_<?= $spv['id'] ?>">
+                                                    <?= htmlspecialchars($spv['nama']) ?> (<?= htmlspecialchars($spv['jabatan']) ?> - <?= htmlspecialchars($spv['prodi'] ?? '-') ?>)
+                                                </label>
+                                            </div>
                                         <?php endforeach; ?>
-                                    </select>
-                                    <small class="text-muted" style="font-size: 0.75rem;">*Tahan CTRL untuk pilih lebih dari satu</small>
+                                    </div>
+                                    <small class="text-muted" style="font-size: 0.75rem;">*Bisa pilih lebih dari satu</small>
                                 </div>
                                 <div class="col-6">
                                     <label class="small">Mulai</label>
